@@ -14,7 +14,7 @@ StockTracker is a Django-based web application for tracking stock prices and man
 
 ## Features
 
-- Real-time stock price tracking
+- Real-time stock price tracking of everyday
 - User-friendly interface for portfolio management
 - Historical price data analysis
 - Alerts and notifications for price changes

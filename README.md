@@ -40,7 +40,7 @@ Before you begin, ensure you have the following installed on your machine:
 2 . Navigate to the project directory
 
   ```bash
-  cd StockTracker
+    cd StockTracker
   ```
 
 3. Install requirements

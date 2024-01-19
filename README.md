@@ -35,3 +35,42 @@ Before you begin, ensure you have the following installed on your machine:
 
    ```bash
    git clone https://github.com/your-username/stocktracker.git
+
+2 . Navigate to the project directory
+
+  ```bash
+  cd StockTracker
+  ```
+
+3. Install requirements
+
+  ```bash
+     pip install -r requirements.txt
+  ```
+
+5. Apply migrations
+
+  ```bash
+    python manage.py migrate
+  ```
+
+7. Start the development server
+  
+  ```bash
+    python manage.py runserver
+  ```
+
+## Usage
+1. Open your web browser and navigate to http://localhost:8000.
+2. Explore the application and start tracking your stocks!
+
+## Contributing
+Contributions are welcome! If you would like to contribute to the project, please follow these steps:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push to your fork and submit a pull request.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.

@@ -1,3 +1,5 @@
+# stockapp/admin.py
 from django.contrib import admin
+from Stocks.models import ContactInformation
 
-# Register your models here.
+admin.site.register(ContactInformation)

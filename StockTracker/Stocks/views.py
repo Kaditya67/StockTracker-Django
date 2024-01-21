@@ -1,4 +1,4 @@
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from .forms import SignUpForm
 from django.shortcuts import render, redirect,HttpResponse
 from django.contrib.auth.forms import AuthenticationForm
@@ -18,24 +18,22 @@ def index(request):
     return render(request,'index.html')
     
 
-def login(request):
-    # if request.user.is_authenticated:
-    #     return redirect('home')  # Redirect to homepage if already logged in
-
+def user_login(request):
     if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            print("Username : ", username, password)
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login_page(request, user)
-                return redirect('home')
-    else:
-        form = AuthenticationForm()
+        username = request.POST['username']
+        password = request.POST['password']
 
-    return render(request, 'login.html', {'form': form})
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, "Successfully Logged In")
+            return redirect('home')  # Redirect to the home page or any other desired page
+        else:
+            print(f"Failed login attempt for user: {username}")
+            messages.error(request, "Invalid credentials! Please try again")
+            return render(request, "user_login.html")
+
+    return render(request, "user_login.html")
 
 
 def signup(request):

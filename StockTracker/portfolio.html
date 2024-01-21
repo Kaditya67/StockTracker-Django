@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %} Dashboard {% endblock %}
+
+{% block content %}
+
+    <div class="container mt-5">
+        <p class="h1 text-center">My Portfolio </p>
+        <p class=" text-center">Check Which stocks you need to exit </p>
+        <p class="text-right"> Last Update on : 11 August 2023 </p>
+        <hr class="hr" />
+
+
+        <!-- Button to trigger the modal -->
+        <button type="button" class="btn btn-primary btn-right" data-toggle="modal" data-target="#addStockModal">
+            Add Stock to Portfolio
+        </button>
+
+    
+        <!-- <p class="h3">Open Positions  </p> -->
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr class="text-center">
+                    <th>Sr. No</th>
+                    <th>Script</th>
+                    <th>Buy Price </th>
+                    <th> QTY </th>
+                    <th> Return % </th>
+                    <th>No of Days</th>
+                    <th>Up/Down Trend</th>
+                    <th>Position</th>
+                    <th> Alerts </th>
+                    <th> </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="text-center">
+                    <td>1</td>
+                    <td>AXIS</td>
+                    <td> 567.40 </td>
+                    <td> 24 </td>
+                    <td> 13 %</td>
+                    <td>5</td>
+                    <td>Up</td>
+                    <td>Open</td>
+                    <td><span class="badge badge-success">Buy</span></td>
+                    <td><button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button> </td>
+                </tr>
+                <tr class="text-center">
+                    <td>2</td>
+                    <td>SBIN</td>
+                    <td> 450.40 </td>
+                    <td> 53 </td>
+                    <td> 10 %</td>
+                    <td>3</td>
+                    <td>Down</td>
+                    <td>Open</td>
+                    <td><span class="badge badge-danger">Sell</span></td>
+                    <td><button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button> </td>
+                </tr>
+                <!-- Add more rows as needed -->
+            </tbody>
+        </table>
+
+        <a href="{% url 'closed_positions' %}" class="text-right">  Closed Positions  </a>
+
+   <!-- Modal for adding a stock -->
+   <div class="modal fade" id="addStockModal" tabindex="-1" role="dialog" aria-labelledby="addStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addStockModalLabel">Add Stock to Portfolio</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Stock addition form -->
+          <form>
+            <div class="form-group">
+              <label for="stockSymbol">Stock Symbol:</label>
+              <input type="text" class="form-control" id="stockSymbol" placeholder="Enter stock symbol" required>
+            </div>
+            <div class="form-group">
+              <label for="quantity">Quantity:</label>
+              <input type="number" class="form-control" id="quantity" placeholder="Enter quantity" required>
+            </div>
+            <div class="form-group">
+              <label for="purchasePrice">Purchase Price:</label>
+              <input type="number" class="form-control" id="purchasePrice" placeholder="Enter purchase price" required>
+            </div>
+            <div class="form-group">
+              <label for="purchaseDate">Purchase Date:</label>
+              <input type="date" class="form-control" id="purchaseDate" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Stock</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+    <!-- Modal for closing a position -->
+    <div class="modal fade" id="closePositionModal" tabindex="-1" role="dialog" aria-labelledby="closePositionModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="closePositionModalLabel">Close Position</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <!-- Position closing form -->
+              <form>
+                <div class="form-group">
+                  <label for="stockSymbol">Stock Symbol:</label>
+                  <input type="text" class="form-control" id="stockSymbol" placeholder="Enter stock symbol" required>
+                </div>
+                <div class="form-group">
+                  <label for="sellQuantity">Sell Quantity:</label>
+                  <input type="number" class="form-control" id="sellQuantity" placeholder="Enter sell quantity" required>
+                </div>
+                <div class="form-group">
+                  <label for="sellPrice">Sell Price:</label>
+                  <input type="number" class="form-control" id="sellPrice" placeholder="Enter sell price" required>
+                </div>
+                <div class="form-group">
+                  <label for="sellDate">Sell Date:</label>
+                  <input type="date" class="form-control" id="sellDate" required>
+                </div>
+                <button type="submit" class="btn btn-danger">Close Position</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+{% endblock %}

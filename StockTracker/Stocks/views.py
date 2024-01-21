@@ -21,6 +21,37 @@ def login(request):
 
 def signup(request):
     return render(request,'signup.html')
-    
+
 def forgetpassword(request):
     return render(request,'forgetpassword.html')
+
+def home(request):
+    return render(request,'home.html')
+
+def stocks(request):
+    return render(request, 'stocks.html')
+
+def sectors(request):
+    return render(request, 'sectors.html')
+
+def portfolio(request):
+    return render(request, 'portfolio.html')
+
+def home(request):
+    # stock_data = {
+    #     'labels': ['Nifty 50', 'Bank Nifty', 'Nifty IT ', 'Nifty Auto'],
+    #     'performance': [12, 19, 3, 15]
+    # }
+    return render(request, 'home.html')
+
+
+def settings(request):
+    return render(request, 'settings.html')
+
+
+def help(request):
+    return render(request, 'help.html')
+
+
+def about(request):
+    return render(request, 'about.html')

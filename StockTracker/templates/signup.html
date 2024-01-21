@@ -49,21 +49,54 @@
     <!-- Signup Page -->
     <div id="signup">
       <h2>Sign Up</h2>
-      <form>
+      <form method="post" action="{% url 'signup' %}">
+        {% csrf_token %}
+
+        {% if form.errors %}
+          <div class="alert alert-danger">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                {{ field|title }}: {{ error }}
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+        
+        <!-- Email Field -->
         <div class="form-group">
-          <label for="signupEmail">Email address</label>
-          <input type="email" class="form-control" id="signupEmail" aria-describedby="emailHelp" placeholder="Enter email">
+          <label for="signupEmail">Email address:</label>
+          <input type="email" class="form-control" id="signupEmail" name="email" aria-describedby="emailHelp" placeholder="Enter email" required>
         </div>
+        
+        <!-- Username Field -->
         <div class="form-group">
-          <label for="signupPassword">Password</label>
-          <input type="password" class="form-control" id="signupPassword" placeholder="Password">
+          <label for="signupUsername">Username:</label>
+          <input type="text" class="form-control" id="signupUsername" name="username" placeholder="Choose a username" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+        
+        <!-- Password Fields -->
+        <div class="form-group">
+          <label for="signupPassword">Password:</label>
+          <input type="password" class="form-control" id="signupPassword" name="password1" placeholder="Password" required>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+          <label for="signupConfirmPassword">Confirm Password:</label>
+          <input type="password" class="form-control" id="signupConfirmPassword" name="password2" placeholder="Confirm password" required>
+        </div>
+
+        
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary btn-block" name="signup">Sign Up</button>
       </form>
+      
+      <!-- Already have an account? -->
       <p class="already-have-account">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
     </div>
   </div>
 
+  <!-- Bootstrap JavaScript Dependencies -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

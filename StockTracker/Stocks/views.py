@@ -1,4 +1,7 @@
+from django.contrib.auth import login
+from .forms import SignUpForm
 from django.shortcuts import render, redirect,HttpResponse
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .models import ContactInformation
 
@@ -13,14 +16,40 @@ def index(request):
         messages.success(request,"Contact Form Submitted !")
 
     return render(request,'index.html')
-        
-
+    
 
 def login(request):
-    return render(request,'login.html')
+    # if request.user.is_authenticated:
+    #     return redirect('home')  # Redirect to homepage if already logged in
+
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            print("Username : ", username, password)
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login_page(request, user)
+                return redirect('home')
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'login.html', {'form': form})
+
 
 def signup(request):
-    return render(request,'signup.html')
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request)  # Log in the user after signup
+            return redirect('login')  # Redirect to the home page or any other desired page
+    else:
+        form = SignUpForm()
+
+    return render(request, 'signup.html', {'form': form})
+
 
 def forgetpassword(request):
     return render(request,'forgetpassword.html')

@@ -99,7 +99,6 @@ def about(request):
 def stocks(request):
     return render(request, 'stocks.html')
 
-
 # views.py
 import requests
 from django.shortcuts import render
@@ -126,9 +125,10 @@ def save_stock_data(api_data):
             stock_data.save()
     else:
         print('Error: "Time Series (Daily)" key not found in API response')
+
 def your_view(request):
-    api_key = 'V043F13YHSZQJR42'
-    symbol = 'FB'  # Replace with the actual stock symbol you want to retrieve, for example: AAPL, GOOGL, MSFT, etc.
+    api_key = 'OJMC16ULZR2R12NR'
+    symbol = 'AAPL'  # Replace with the actual stock symbol you want to retrieve, for example: AAPL, GOOGL, MSFT, etc.
 
     # Make the API request
     api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'

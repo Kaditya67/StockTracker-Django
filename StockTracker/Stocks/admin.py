@@ -9,4 +9,5 @@ admin.site.register(ContactInformation)
 from .models import StockData
 
 admin.site.register(StockData)
+
  

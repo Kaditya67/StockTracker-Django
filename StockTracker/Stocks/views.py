@@ -99,55 +99,99 @@ def about(request):
 def stocks(request):
     return render(request, 'stocks.html')
 
+# # views.py
+# import requests
+# from django.shortcuts import render
+# from .models import StockData
+# from datetime import datetime
+
+# def save_stock_data(api_data):
+#     if 'Time Series (Daily)' in api_data:
+#         time_series_data = api_data['Time Series (Daily)']
+
+#         # Extract the last 20 days
+#         last_20_days = list(time_series_data.items())[:20]
+
+#         for date, values in last_20_days:
+#             stock_data = StockData(
+#                 symbol=api_data['Meta Data']['2. Symbol'],
+#                 date=datetime.strptime(date, '%Y-%m-%d').date(),
+#                 open_price=float(values['1. open']),
+#                 high_price=float(values['2. high']),
+#                 low_price=float(values['3. low']),
+#                 close_price=float(values['4. close']),
+#                 volume=int(values['5. volume'])
+#             )
+#             stock_data.save()
+#     else:
+#         print('Error: "Time Series (Daily)" key not found in API response')
+
+# def your_view(request):
+#     api_key = 'OJMC16ULZR2R12NR'
+#     symbol = 'AAPL'  # Replace with the actual stock symbol you want to retrieve, for example: AAPL, GOOGL, MSFT, etc.
+
+#     # Make the API request
+#     api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
+#     response = requests.get(api_url)
+
+#     if response.status_code == 200:
+#         api_data = response.json()
+
+#         # Print the entire API response
+#         print(api_data)
+
+#         # Assuming the API response structure is similar to what you provided
+#         save_stock_data(api_data)
+
+#         # Now the data of the past 20 days is saved in the database
+#         # You can use the data in your template or perform other operations
+
+#         return render(request, 'your_template.html', {'api_data': api_data})
+#     else:
+#         # Handle the API request error
+#         print(f'API request failed with status code: {response.status_code}')
+#         return render(request, 'error_template.html', {'error_message': 'Failed to fetch stock data'})
+
+
+
 # views.py
-import requests
 from django.shortcuts import render
 from .models import StockData
-from datetime import datetime
+from datetime import datetime, timedelta
+from pandas_datareader import data as pdr
+import yfinance as yf
+import pandas as pd
 
-def save_stock_data(api_data):
-    if 'Time Series (Daily)' in api_data:
-        time_series_data = api_data['Time Series (Daily)']
+def fetch_and_store_stock_data(request):
+    # Database setup
+    stock_symbols = ['AAPL', 'MSFT', 'GOOGL']
+    num_days = 200   # Change to 200 to fetch data for the last 200 days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=num_days * 2)
 
-        # Extract the last 20 days
-        last_20_days = list(time_series_data.items())[:20]
+    # override the data reader function
+    yf.pdr_override()
 
-        for date, values in last_20_days:
+    for symbol in stock_symbols:
+        df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        df = df[['Close']].last('20D')
+
+        # Calculate EMA
+        ema = df['Close'].ewm(span=num_days, adjust=False).mean()
+        df['EMA'] = ema
+
+        # Store in the database
+        for _, row in df.iterrows():
             stock_data = StockData(
-                symbol=api_data['Meta Data']['2. Symbol'],
-                date=datetime.strptime(date, '%Y-%m-%d').date(),
-                open_price=float(values['1. open']),
-                high_price=float(values['2. high']),
-                low_price=float(values['3. low']),
-                close_price=float(values['4. close']),
-                volume=int(values['5. volume'])
+                symbol=symbol,
+                date=row.name,
+                close_price=row['Close'],
+                ema=row['EMA']
             )
             stock_data.save()
-    else:
-        print('Error: "Time Series (Daily)" key not found in API response')
 
-def your_view(request):
-    api_key = 'OJMC16ULZR2R12NR'
-    symbol = 'AAPL'  # Replace with the actual stock symbol you want to retrieve, for example: AAPL, GOOGL, MSFT, etc.
+    return render(request, 'success.html')
 
-    # Make the API request
-    api_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
-    response = requests.get(api_url)
-
-    if response.status_code == 200:
-        api_data = response.json()
-
-        # Print the entire API response
-        print(api_data)
-
-        # Assuming the API response structure is similar to what you provided
-        save_stock_data(api_data)
-
-        # Now the data of the past 20 days is saved in the database
-        # You can use the data in your template or perform other operations
-
-        return render(request, 'your_template.html', {'api_data': api_data})
-    else:
-        # Handle the API request error
-        print(f'API request failed with status code: {response.status_code}')
-        return render(request, 'error_template.html', {'error_message': 'Failed to fetch stock data'})
+def display_stock_data(request):
+    stock_data = StockData.objects.all()
+    return render(request, 'admin_stock_data.html', {'stock_data': stock_data})

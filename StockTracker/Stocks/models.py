@@ -41,14 +41,25 @@ class UserProfile(AbstractUser):
         return self.username
 
 
+# class StockData(models.Model):
+#     symbol = models.CharField(max_length=10)
+#     date = models.DateField()
+#     open_price = models.DecimalField(max_digits=10, decimal_places=4)
+#     high_price = models.DecimalField(max_digits=10, decimal_places=4)
+#     low_price = models.DecimalField(max_digits=10, decimal_places=4)
+#     close_price = models.DecimalField(max_digits=10, decimal_places=4)
+#     volume = models.IntegerField()
+
+#     def __str__(self):
+#         return f'{self.symbol} - {self.date}'
+
+# models.py
+
 class StockData(models.Model):
     symbol = models.CharField(max_length=10)
     date = models.DateField()
-    open_price = models.DecimalField(max_digits=10, decimal_places=4)
-    high_price = models.DecimalField(max_digits=10, decimal_places=4)
-    low_price = models.DecimalField(max_digits=10, decimal_places=4)
     close_price = models.DecimalField(max_digits=10, decimal_places=4)
-    volume = models.IntegerField()
+    ema = models.DecimalField(max_digits=10, decimal_places=4)
 
     def __str__(self):
         return f'{self.symbol} - {self.date}'

@@ -155,17 +155,40 @@ def stocks(request):
 
 
 # views.py
+def display_stock_data(request):
+    stock_data = StockData.objects.all()
+    return render(request, 'admin_stock_data.html', {'stock_data': stock_data})
+# views.py
 from django.shortcuts import render
 from .models import StockData
 from datetime import datetime, timedelta
 from pandas_datareader import data as pdr
 import yfinance as yf
 import pandas as pd
+import numpy as np
+
+def calculate_rsi_and_rs(df, n=14):
+    close_price_changes = df['Close'].diff()
+
+    gains = close_price_changes.where(close_price_changes > 0, 0)
+    losses = -close_price_changes.where(close_price_changes < 0, 0)
+
+    average_gain = gains.rolling(window=n, min_periods=1).mean()
+    average_loss = losses.rolling(window=n, min_periods=1).mean()
+
+    rs = average_gain / average_loss
+    rsi = 100 - (100 / (1 + rs))
+
+    # Replace NaN and -inf values with None
+    rsi.replace([np.nan, -np.inf], None, inplace=True)
+    rs.replace([np.nan, -np.inf], None, inplace=True)
+
+    return rsi, rs
 
 def fetch_and_store_stock_data(request):
     # Database setup
     stock_symbols = ['AAPL', 'MSFT', 'GOOGL']
-    num_days = 200   # Change to 200 to fetch data for the last 200 days
+    num_days = 200  # Change to 200 to fetch data for the last 200 days
     end_date = datetime.now()
     start_date = end_date - timedelta(days=num_days * 2)
 
@@ -174,24 +197,25 @@ def fetch_and_store_stock_data(request):
 
     for symbol in stock_symbols:
         df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
-        df = df[['Close']].last('20D')
+        df = df[['Close']].last(f'{num_days}D')  # Fetch data for the last 200 days
 
         # Calculate EMA
         ema = df['Close'].ewm(span=num_days, adjust=False).mean()
         df['EMA'] = ema
 
+        # Calculate RSI and RS
+        rsi, rs = calculate_rsi_and_rs(df)
+
         # Store in the database
-        for _, row in df.iterrows():
+        for idx, row in df.iterrows():
             stock_data = StockData(
                 symbol=symbol,
                 date=row.name,
                 close_price=row['Close'],
-                ema=row['EMA']
+                ema=row['EMA'],
+                rsi=None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
+                rs=None if pd.isna(rs.loc[idx]) else rs.loc[idx]
             )
             stock_data.save()
 
     return render(request, 'success.html')
-
-def display_stock_data(request):
-    stock_data = StockData.objects.all()
-    return render(request, 'admin_stock_data.html', {'stock_data': stock_data})

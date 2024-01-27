@@ -37,18 +37,25 @@ def user_login(request):
     return render(request, "user_login.html")
 
 
+# views.py
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import UserProfile
+
 def signup(request):
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request)  # Log in the user after signup
-            return redirect('login')  # Redirect to the home page or any other desired page
+            login(request, user)
+            messages.success(request, "Successfully signed up and logged in")
+            return redirect('user_login')  # Redirect to the home page or any other desired page
     else:
-        form = SignUpForm()
+        form = UserCreationForm()
 
     return render(request, 'signup.html', {'form': form})
-
 
 def forgetpassword(request):
     return render(request,'forgetpassword.html')

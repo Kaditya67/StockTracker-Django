@@ -15,5 +15,21 @@ from .models import IndicatorValues
 admin.site.register(IndicatorValues)
 
 
+# User SignUp
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import UserProfile
+
+class CustomUserAdmin(UserAdmin):
+    model = UserProfile
+    # Customize the display fields if needed
+    list_display = ['username', 'email', 'is_staff', 'is_active']
+
+# Register the UserProfile model with the custom admin
+admin.site.register(UserProfile, CustomUserAdmin)
+
+
+
 
  

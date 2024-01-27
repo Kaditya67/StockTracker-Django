@@ -1,5 +1,5 @@
 # stockapp/models.py
-from django.contrib.auth.models import AbstractUser
+# from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class ContactInformation(models.Model):
@@ -10,27 +10,29 @@ class ContactInformation(models.Model):
     def __str__(self):
         return self.name
 
-class UserProfile(AbstractUser):
-    # Add any additional fields you need for your user model
-    # For example:
-    bio = models.TextField(blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+# models.py
+from django.contrib.auth.models import AbstractUser
 
-    # Add related_name to avoid clashes with auth.User
+# models.py
+from django.contrib.auth.models import AbstractUser, Group, Permission
+
+class UserProfile(AbstractUser):
+    # Other fields if needed
+
     groups = models.ManyToManyField(
-        'auth.Group',
+        Group,
         verbose_name='groups',
         blank=True,
         help_text='The groups this user belongs to.',
-        related_name='user_profiles',
+        related_name='user_profiles_groups',  # Updated related_name
     )
 
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
+        Permission,
         verbose_name='user permissions',
         blank=True,
         help_text='Specific permissions for this user.',
-        related_name='user_profiles',
+        related_name='user_profiles_permissions',  # Updated related_name
     )
 
     def save(self, *args, **kwargs):
@@ -39,20 +41,6 @@ class UserProfile(AbstractUser):
 
     def __str__(self):
         return self.username
-
-
-# class StockData(models.Model):
-#     symbol = models.CharField(max_length=10)
-#     date = models.DateField()
-#     open_price = models.DecimalField(max_digits=10, decimal_places=4)
-#     high_price = models.DecimalField(max_digits=10, decimal_places=4)
-#     low_price = models.DecimalField(max_digits=10, decimal_places=4)
-#     close_price = models.DecimalField(max_digits=10, decimal_places=4)
-#     volume = models.IntegerField()
-
-#     def __str__(self):
-#         return f'{self.symbol} - {self.date}'
-
 
 
 # models.py

@@ -162,10 +162,16 @@ def display_stock_data(request):
 from django.shortcuts import render
 from .models import StockData
 from datetime import datetime, timedelta
+from .models import StockData, IndicatorValues 
 from pandas_datareader import data as pdr
 import yfinance as yf
 import pandas as pd
 import numpy as np
+
+
+# Function to calculate EMA
+def calculate_ema(data, column, span):
+    return data[column].ewm(span=span, adjust=False).mean()
 
 def calculate_rsi_and_rs(df, n=14):
     close_price_changes = df['Close'].diff()
@@ -184,7 +190,6 @@ def calculate_rsi_and_rs(df, n=14):
     rs.replace([np.nan, -np.inf], None, inplace=True)
 
     return rsi, rs
-
 def fetch_and_store_stock_data(request):
     # Database setup
     stock_symbols = ['AAPL', 'MSFT', 'GOOGL']
@@ -192,7 +197,7 @@ def fetch_and_store_stock_data(request):
     end_date = datetime.now()
     start_date = end_date - timedelta(days=num_days * 2)
 
-    # override the data reader function
+    # Override the data reader function
     yf.pdr_override()
 
     for symbol in stock_symbols:
@@ -200,8 +205,10 @@ def fetch_and_store_stock_data(request):
         df = df[['Close']].last(f'{num_days}D')  # Fetch data for the last 200 days
 
         # Calculate EMA
-        ema = df['Close'].ewm(span=num_days, adjust=False).mean()
-        df['EMA'] = ema
+        df['EMA20'] = calculate_ema(df, 'Close', 20)
+        df['EMA50'] = calculate_ema(df, 'Close', 50)
+        df['EMA100'] = calculate_ema(df, 'Close', 100)
+        df['EMA200'] = calculate_ema(df, 'Close', 200)
 
         # Calculate RSI and RS
         rsi, rs = calculate_rsi_and_rs(df)
@@ -211,11 +218,20 @@ def fetch_and_store_stock_data(request):
             stock_data = StockData(
                 symbol=symbol,
                 date=row.name,
-                close_price=row['Close'],
-                ema=row['EMA'],
+                close_price=row['Close']
+            )
+            stock_data.save()
+
+            # Create and save IndicatorValues instance
+            indicator_values = IndicatorValues(
+                stock_data=stock_data,
+                ema20=row['EMA20'],
+                ema50=row['EMA50'],
+                ema100=row['EMA100'],
+                ema200=row['EMA200'],
                 rsi=None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
                 rs=None if pd.isna(rs.loc[idx]) else rs.loc[idx]
             )
-            stock_data.save()
+            indicator_values.save()
 
     return render(request, 'success.html')

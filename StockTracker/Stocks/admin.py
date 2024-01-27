@@ -10,6 +10,10 @@ from .models import StockData
 
 admin.site.register(StockData)
 
+from .models import IndicatorValues
+
+admin.site.register(IndicatorValues)
+
 
 
  

@@ -35,16 +35,15 @@ def user_login(request):
 
     return render(request, "user_login.html")
 
-
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request)  # Log in the user after signup
-            return redirect('login')  # Redirect to the home page or any other desired page
-        else:
-            form = SignUpForm()
+            login(request, user)  # Log in the user after signup
+            return redirect('login')  # Redirect to the login page or any other desired page
+    else:
+        form = SignUpForm()
 
     return render(request, 'signup.html', {'form': form})
 
@@ -157,9 +156,9 @@ def stocks(request):
 def display_stock_data(request):
     stock_data = StockData.objects.all()
     return render(request, 'admin_stock_data.html', {'stock_data': stock_data})
-    # views.py
+# views.py
 from django.shortcuts import render
-from .models import StockData
+from .models import StockData, IndicatorValues
 from datetime import datetime, timedelta
 from pandas_datareader import data as pdr
 import yfinance as yf
@@ -178,42 +177,55 @@ def calculate_rsi_and_rs(df, n=14):
     rs = average_gain / average_loss
     rsi = 100 - (100 / (1 + rs))
 
-        # Replace NaN and -inf values with None
+    # Replace NaN and -inf values with None
     rsi.replace([np.nan, -np.inf], None, inplace=True)
     rs.replace([np.nan, -np.inf], None, inplace=True)
 
     return rsi, rs
 
 def fetch_and_store_stock_data(request):
-        # Database setup
-    stock_symbols = ['AAPL', 'MSFT', 'GOOGL']
+    # Database setup
+    stock_symbols = ['^NSEI', '^NSEBANK', '^CNXAUTO', '^CNXIT', '^CNXMETAL', '^CNXMEDIA', '^CNXCONS durables', '^NSE100', '^NSE200', '^NSENEXT50']
     num_days = 200  # Change to 200 to fetch data for the last 200 days
     end_date = datetime.now()
     start_date = end_date - timedelta(days=num_days * 2)
 
-        # override the data reader function
+    # Override the data reader function
     yf.pdr_override()
 
     for symbol in stock_symbols:
         df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        df['Date'] = pd.to_datetime(df.index)  # Convert index to DatetimeIndex
+        df = df.set_index('Date')  # Set 'Date' as the new index
+
         df = df[['Close']].last(f'{num_days}D')  # Fetch data for the last 200 days
 
-            # Calculate EMA
-        ema = df['Close'].ewm(span=num_days, adjust=False).mean()
-        df['EMA'] = ema
+        # Calculate EMA
+        ema20 = df['Close'].ewm(span=20, adjust=False).mean()
+        ema50 = df['Close'].ewm(span=50, adjust=False).mean()
+        ema100 = df['Close'].ewm(span=100, adjust=False).mean()
+        ema200 = df['Close'].ewm(span=200, adjust=False).mean()
 
-            # Calculate RSI and RS
+        # Calculate RSI and RS
         rsi, rs = calculate_rsi_and_rs(df)
 
-            # Store in the database
+        # Store in the database
         for idx, row in df.iterrows():
-            stock_data = StockData(
+            stock_data = StockData.objects.create(
                 symbol=symbol,
                 date=row.name,
-                close_price=row['Close'],
-                ema=row['EMA'],
+                close_price=row['Close']
+            )
+
+            indicator_values = IndicatorValues.objects.create(
+                stock_data=stock_data,
+                ema20=None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
+                ema50=None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
+                ema100=None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
+                ema200=None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
                 rsi=None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
                 rs=None if pd.isna(rs.loc[idx]) else rs.loc[idx]
+                # Add other indicator values as needed
             )
-            stock_data.save()
+
     return render(request, 'success.html')

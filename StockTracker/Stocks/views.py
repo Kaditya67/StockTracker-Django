@@ -156,6 +156,84 @@ def stocks(request):
 def display_stock_data(request):
     stock_data = StockData.objects.all()
     return render(request, 'admin_stock_data.html', {'stock_data': stock_data})
+
+## Adding 200 days old data
+# # views.py
+# from django.shortcuts import render
+# from .models import StockData, IndicatorValues
+# from datetime import datetime, timedelta
+# from pandas_datareader import data as pdr
+# import yfinance as yf
+# import pandas as pd
+# import numpy as np
+
+# def calculate_rsi_and_rs(df, n=14):
+#     close_price_changes = df['Close'].diff()
+
+#     gains = close_price_changes.where(close_price_changes > 0, 0)
+#     losses = -close_price_changes.where(close_price_changes < 0, 0)
+
+#     average_gain = gains.rolling(window=n, min_periods=1).mean()
+#     average_loss = losses.rolling(window=n, min_periods=1).mean()
+
+#     rs = average_gain / average_loss
+#     rsi = 100 - (100 / (1 + rs))
+
+#     # Replace NaN and -inf values with None
+#     rsi.replace([np.nan, -np.inf], None, inplace=True)
+#     rs.replace([np.nan, -np.inf], None, inplace=True)
+
+#     return rsi, rs
+
+# def fetch_and_store_stock_data(request):
+#     # Database setup
+#     stock_symbols = ['^NSEI', '^NSEBANK', '^CNXAUTO', '^CNXIT', '^CNXMETAL', '^CNXMEDIA', '^CNXCONS durables', '^NSE100', '^NSE200', '^NSENEXT50']
+#     num_days = 200  # Change to 200 to fetch data for the last 200 days
+#     end_date = datetime.now()
+#     start_date = end_date - timedelta(days=num_days * 2)
+
+#     # Override the data reader function
+#     yf.pdr_override()
+
+#     for symbol in stock_symbols:
+#         df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+#         df['Date'] = pd.to_datetime(df.index)  # Convert index to DatetimeIndex
+#         df = df.set_index('Date')  # Set 'Date' as the new index
+
+#         df = df[['Close']].last(f'{num_days}D')  # Fetch data for the last 200 days
+
+#         # Calculate EMA
+#         ema20 = df['Close'].ewm(span=20, adjust=False).mean()
+#         ema50 = df['Close'].ewm(span=50, adjust=False).mean()
+#         ema100 = df['Close'].ewm(span=100, adjust=False).mean()
+#         ema200 = df['Close'].ewm(span=200, adjust=False).mean()
+
+#         # Calculate RSI and RS
+#         rsi, rs = calculate_rsi_and_rs(df)
+
+#         # Store in the database
+#         for idx, row in df.iterrows():
+#             stock_data = StockData.objects.create(
+#                 symbol=symbol,
+#                 date=row.name,
+#                 close_price=row['Close']
+#             )
+
+#             indicator_values = IndicatorValues.objects.create(
+#                 stock_data=stock_data,
+#                 ema20=None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
+#                 ema50=None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
+#                 ema100=None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
+#                 ema200=None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
+#                 rsi=None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
+#                 rs=None if pd.isna(rs.loc[idx]) else rs.loc[idx]
+#                 # Add other indicator values as needed
+#             )
+
+#     return render(request, 'success.html')
+
+
+## Adding new Stocks data
 # views.py
 from django.shortcuts import render
 from .models import StockData, IndicatorValues
@@ -183,49 +261,80 @@ def calculate_rsi_and_rs(df, n=14):
 
     return rsi, rs
 
-def fetch_and_store_stock_data(request):
+def fetch_and_calculate_ema(request):
     # Database setup
     stock_symbols = ['^NSEI', '^NSEBANK', '^CNXAUTO', '^CNXIT', '^CNXMETAL', '^CNXMEDIA', '^CNXCONS durables', '^NSE100', '^NSE200', '^NSENEXT50']
-    num_days = 200  # Change to 200 to fetch data for the last 200 days
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=num_days * 2)
 
     # Override the data reader function
     yf.pdr_override()
 
-    for symbol in stock_symbols:
-        df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
-        df['Date'] = pd.to_datetime(df.index)  # Convert index to DatetimeIndex
-        df = df.set_index('Date')  # Set 'Date' as the new index
+    result_data = []
 
-        df = df[['Close']].last(f'{num_days}D')  # Fetch data for the last 200 days
+    for symbol in stock_symbols:
+        # Check if data for the symbol is already present in the database
+        latest_data = StockData.objects.filter(symbol=symbol).order_by('-date').first()
+
+        if latest_data is not None:
+            # Check if the latest data is up-to-date (within the last day)
+            if (datetime.now().date() - latest_data.date).days <= 1:
+                # Skip fetching new data if it's up-to-date
+                continue
+
+        # Fetch new data
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=200)  # Fetch data for the last 200 days
+
+        df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        df_new['Date'] = pd.to_datetime(df_new.index)  # Convert index to DatetimeIndex
+        df_new = df_new.set_index('Date')  # Set 'Date' as the new index
+
+        # Ensure 'close_price' column is present in the new dataframe
+        if 'Close' not in df_new.columns:
+            # Handle the situation where 'Close' is not present
+            # You might want to log a message or handle it based on your requirements
+            continue
 
         # Calculate EMA
-        ema20 = df['Close'].ewm(span=20, adjust=False).mean()
-        ema50 = df['Close'].ewm(span=50, adjust=False).mean()
-        ema100 = df['Close'].ewm(span=100, adjust=False).mean()
-        ema200 = df['Close'].ewm(span=200, adjust=False).mean()
+        ema20 = df_new['Close'].ewm(span=20, adjust=False).mean()
+        ema50 = df_new['Close'].ewm(span=50, adjust=False).mean()
+        ema100 = df_new['Close'].ewm(span=100, adjust=False).mean()
+        ema200 = df_new['Close'].ewm(span=200, adjust=False).mean()
 
         # Calculate RSI and RS
-        rsi, rs = calculate_rsi_and_rs(df)
+        rsi, rs = calculate_rsi_and_rs(df_new)
 
         # Store in the database
-        for idx, row in df.iterrows():
-            stock_data = StockData.objects.create(
+        for idx, row in df_new.iterrows():
+            stock_data, created = StockData.objects.get_or_create(
                 symbol=symbol,
                 date=row.name,
-                close_price=row['Close']
+                defaults={'close_price': row['Close']}
             )
 
-            indicator_values = IndicatorValues.objects.create(
+            indicator_values, created = IndicatorValues.objects.get_or_create(
                 stock_data=stock_data,
-                ema20=None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
-                ema50=None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
-                ema100=None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
-                ema200=None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
-                rsi=None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
-                rs=None if pd.isna(rs.loc[idx]) else rs.loc[idx]
-                # Add other indicator values as needed
+                defaults={
+                    'ema20': None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
+                    'ema50': None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
+                    'ema100': None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
+                    'ema200': None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
+                    'rsi': None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
+                    'rs': None if pd.isna(rs.loc[idx]) else rs.loc[idx],
+                    # Add other indicator values as needed
+                }
             )
 
-    return render(request, 'success.html')
+            result_data.append({
+                'symbol': symbol,
+                'date': row.name,
+                'close_price': row['Close'],
+                'ema20': ema20.loc[idx],
+                'ema50': ema50.loc[idx],
+                'ema100': ema100.loc[idx],
+                'ema200': ema200.loc[idx],
+                'rsi': rsi.loc[idx],
+                'rs': rs.loc[idx],
+                # Add other indicator values as needed
+            })
+
+    return render(request, 'fetch_and_calculate_ema.html', {'result_data': result_data})

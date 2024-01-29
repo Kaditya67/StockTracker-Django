@@ -263,7 +263,12 @@ def calculate_rsi_and_rs(df, n=14):
 
 def fetch_and_calculate_ema(request):
     # Database setup
-    stock_symbols = ['^NSEI', '^NSEBANK', '^CNXAUTO', '^CNXIT', '^CNXMETAL', '^CNXMEDIA', '^CNXCONS durables', '^NSE100', '^NSE200', '^NSENEXT50']
+    stock_symbols = [
+    'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
+    'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
+    'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
+    'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS'
+]
 
     # Override the data reader function
     yf.pdr_override()

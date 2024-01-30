@@ -1,0 +1,32 @@
+<!-- templates/ema_counts.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EMA Counts</title>
+</head>
+<body>
+    <h1>EMA Counts</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Stock</th>
+                <th>EMA 20 Count</th>
+                <th>EMA 50 Count</th>
+                <th>EMA 100 Count</th>
+                <th>EMA 200 Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in ema_count_data %}
+                <tr>
+                    <td>{{ entry.stock_data.symbol }}</td>
+                    <td>{{ entry.ema20_count }}</td>
+                    <td>{{ entry.ema50_count }}</td>
+                    <td>{{ entry.ema100_count }}</td>
+                    <td>{{ entry.ema200_count }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

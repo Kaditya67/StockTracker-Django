@@ -287,7 +287,7 @@ def fetch_and_calculate_ema(request):
 
         # Fetch new data
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=200)  # Fetch data for the last 200 days
+        start_date = end_date - timedelta(days=400)  # Fetch data for the last 200 days
 
         df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
         df_new['Date'] = pd.to_datetime(df_new.index)  # Convert index to DatetimeIndex
@@ -343,3 +343,69 @@ def fetch_and_calculate_ema(request):
             })
 
     return render(request, 'fetch_and_calculate_ema.html', {'result_data': result_data})
+
+
+# Data diaplay
+
+# views.py
+from django.shortcuts import render
+from .models import StockData, IndicatorValues
+
+def display_stock_data(request):
+    num_rows = int(request.GET.get('num_rows', 1))
+    stocks = StockData.objects.values_list('symbol', flat=True).distinct()
+    selected_stock = request.GET.get('stock', stocks.first())  # Get selected stock or default to the first stock
+    stock_data = StockData.objects.filter(symbol=selected_stock)[:num_rows]
+    indicator_values = IndicatorValues.objects.filter(stock_data__symbol=selected_stock)[:num_rows]
+
+    return render(request, 'display_stock_data.html', {'stock_data': stock_data, 'indicator_values': indicator_values, 'num_rows': num_rows, 'stocks': stocks, 'selected_stock': selected_stock})
+
+
+# closing_prices = StockData.objects.filter(symbol=stock).order_by('date').values_list('close_price', flat=True)
+# Ema count
+# views.py
+from django.shortcuts import render
+from .models import StockData, IndicatorValues, EmaCounts
+
+def ema_counts(request):
+    stocks = StockData.objects.values_list('symbol', flat=True).distinct()
+    ema_values = ['ema20', 'ema50', 'ema100', 'ema200']  # Add other EMAs as needed
+
+    # Clear existing EmaCounts data
+    EmaCounts.objects.all().delete()
+
+    for stock in stocks:
+        ema_counts_entry = EmaCounts.objects.create(stock_data=StockData.objects.filter(symbol=stock).first())
+
+        for ema in ema_values:
+            ema_values_for_stock = IndicatorValues.objects.filter(stock_data__symbol=stock).values_list(ema, flat=True)
+            closing_prices = StockData.objects.filter(symbol=stock).order_by('-date').values_list('close_price', flat=True)
+
+            # Initialize counters
+            positive_count = 0
+            negative_count = 0
+            current_behavior = None
+
+            # Loop through data in reverse order
+            for closing_price, ema_value in zip(closing_prices, ema_values_for_stock):
+                if closing_price > ema_value:
+                    if current_behavior == 'negative':
+                        # Behavior changed from negative to positive
+                        break
+                    positive_count += 1
+                    current_behavior = 'positive'
+                elif closing_price < ema_value:
+                    if current_behavior == 'positive':
+                        # Behavior changed from positive to negative
+                        break
+                    negative_count += 1
+                    current_behavior = 'negative'
+
+            # Update counts in the EmaCounts model after the loop
+            setattr(ema_counts_entry, f"{ema}_count", positive_count - negative_count)
+
+        ema_counts_entry.save()
+
+    ema_count_data = EmaCounts.objects.all()
+
+    return render(request, 'ema_counts.html', {'ema_count_data': ema_count_data})

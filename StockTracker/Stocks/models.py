@@ -64,3 +64,18 @@ class IndicatorValues(models.Model):
 
     def __str__(self):
         return f"{self.stock_data.symbol} - {self.stock_data.date}"
+
+
+# Indicator count 
+# models.py
+from django.db import models
+
+class EmaCounts(models.Model):
+    stock_data = models.ForeignKey(StockData, on_delete=models.CASCADE)
+    ema20_count = models.IntegerField(default=0)
+    ema50_count = models.IntegerField(default=0)
+    ema100_count = models.IntegerField(default=0)
+    ema200_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.stock_data.symbol} - {self.stock_data.date}"

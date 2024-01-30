@@ -13,6 +13,9 @@ admin.site.register(StockData)
 from .models import IndicatorValues
 
 admin.site.register(IndicatorValues)
+from .models import EmaCounts
+
+admin.site.register(EmaCounts)
 
 
 # User SignUp

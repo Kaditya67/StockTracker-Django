@@ -362,8 +362,6 @@ def display_stock_data(request):
 
 
 # closing_prices = StockData.objects.filter(symbol=stock).order_by('date').values_list('close_price', flat=True)
-# Ema count
-# views.py
 from django.shortcuts import render
 from .models import StockData, IndicatorValues, EmaCounts
 
@@ -377,32 +375,55 @@ def ema_counts(request):
     for stock in stocks:
         ema_counts_entry = EmaCounts.objects.create(stock_data=StockData.objects.filter(symbol=stock).first())
 
+        ema_data = {}  # Store trend data for each EMA
         for ema in ema_values:
+            ema_data[ema] = {
+                "current_trend": None,
+                "consecutive_days": 0,
+                "start_date": None,
+            }
+
             ema_values_for_stock = IndicatorValues.objects.filter(stock_data__symbol=stock).values_list(ema, flat=True)
             closing_prices = StockData.objects.filter(symbol=stock).order_by('-date').values_list('close_price', flat=True)
+            closing_dates = StockData.objects.filter(symbol=stock).order_by('-date').values_list('date', flat=True)
 
-            # Initialize counters
-            positive_count = 0
-            negative_count = 0
-            current_behavior = None
-
-            # Loop through data in reverse order
-            for closing_price, ema_value in zip(closing_prices, ema_values_for_stock):
+            for date, (closing_price, ema_value) in zip(reversed(closing_dates), zip(reversed(closing_prices), reversed(ema_values_for_stock))):
                 if closing_price > ema_value:
-                    if current_behavior == 'negative':
-                        # Behavior changed from negative to positive
-                        break
-                    positive_count += 1
-                    current_behavior = 'positive'
+                    if ema_data[ema]["current_trend"] != "Up":
+                        # New "Up" sequence starts
+                        ema_data[ema]["current_trend"] = "Up"
+                        ema_data[ema]["consecutive_days"] = 1
+                        ema_data[ema]["start_date"] = date
+                    else:
+                        ema_data[ema]["consecutive_days"] += 1
                 elif closing_price < ema_value:
-                    if current_behavior == 'positive':
-                        # Behavior changed from positive to negative
-                        break
-                    negative_count += 1
-                    current_behavior = 'negative'
+                    if ema_data[ema]["current_trend"] != "Down":
+                        # New "Down" sequence starts
+                        ema_data[ema]["current_trend"] = "Down"
+                        ema_data[ema]["consecutive_days"] = 1
+                        ema_data[ema]["start_date"] = date
+                    else:
+                        ema_data[ema]["consecutive_days"] += 1
 
-            # Update counts in the EmaCounts model after the loop
-            setattr(ema_counts_entry, f"{ema}_count", positive_count - negative_count)
+            # Build output strings for each EMA
+            ema_output = {
+                "ema20": "",
+                "ema50": "",
+                "ema100": "",
+                "ema200": "",
+            }
+
+            for ema, trend_data in ema_data.items():
+                if trend_data["current_trend"] == "Up":
+                    ema_output[ema] += f"Up: {trend_data['consecutive_days']} days (from {trend_data['start_date']} to {date})\n"
+                elif trend_data["current_trend"] == "Down":
+                    ema_output[ema] += f"Down: {trend_data['consecutive_days']} days (from {trend_data['start_date']} to {date})\n"
+
+            # Store the output strings in the EmaCounts object
+            ema_counts_entry.ema20_output = ema_output["ema20"]
+            ema_counts_entry.ema50_output = ema_output["ema50"]
+            ema_counts_entry.ema100_output = ema_output["ema100"]
+            ema_counts_entry.ema200_output = ema_output["ema200"]
 
         ema_counts_entry.save()
 

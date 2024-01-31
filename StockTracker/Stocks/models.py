@@ -66,10 +66,10 @@ from django.db import models
 
 class EmaCounts(models.Model):
     stock_data = models.ForeignKey(FinancialData, on_delete=models.CASCADE)
-    ema20_output = models.TextField(blank=True)
-    ema50_output = models.TextField(blank=True)
-    ema100_output = models.TextField(blank=True)
-    ema200_output = models.TextField(blank=True)
+    ema20_output = models.IntegerField()
+    ema50_output = models.IntegerField()
+    ema100_output = models.IntegerField()
+    ema200_output = models.IntegerField()
     # Add other fields as needed
 
 

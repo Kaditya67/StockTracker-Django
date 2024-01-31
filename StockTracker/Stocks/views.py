@@ -409,6 +409,7 @@ def fetch_and_calculate_ema(request):
 
 #     return render(request, 'ema_counts.html', {'ema_count_data': ema_count_data})
 
+
 # views.py
 from django.shortcuts import render
 from .models import FinancialData, EmaCounts
@@ -417,28 +418,38 @@ def calculate_ema_counters(closing_prices, ema_values):
     ema_counter = 0
 
     for i, closing_price in enumerate(closing_prices):
-        if i == 0:
-            # Initialize counter for the newest date
-            if closing_price > ema_values[i]:
-                ema_counter = 1
-            else:
-                ema_counter = -1
+        if i < len(ema_values):
+            try:
+                ema_value = float(ema_values[i])
+                if i == 0:
+                    # Initialize counter for the newest date
+                    if closing_price > ema_value:
+                        ema_counter = 1
+                    else:
+                        ema_counter = -1
+                else:
+                    # Compare closing price with EMA for the rest of the dates
+                    if closing_price > ema_value:
+                        ema_counter += 1
+                    else:
+                        break  # Break the loop if behavior changes
+            except ValueError:
+                # Handle the case where ema_values contain non-numeric values
+                break
         else:
-            # Compare closing price with EMA for the rest of the dates
-            if closing_price > ema_values[i]:
-                ema_counter += 1
-            else:
-                break  # Break the loop if behavior changes
+            # Handle the case where the ema_values list is shorter than the closing_prices list
+            break
 
     return ema_counter
 
 def calculate_ema_counts(stock_data):
-    ema_counts = EmaCounts.objects.get_or_create(stock_data=stock_data)[0]
+    ema_counts, created = EmaCounts.objects.get_or_create(stock_data=stock_data)
 
-    ema20_values = [float(value) for value in ema_counts.ema20_output.split(',')]
-    ema50_values = [float(value) for value in ema_counts.ema50_output.split(',')]
-    ema100_values = [float(value) for value in ema_counts.ema100_output.split(',')]
-    ema200_values = [float(value) for value in ema_counts.ema200_output.split(',')]
+    # Split ema_output fields only if they are not empty
+    ema20_values = [value for value in ema_counts.ema20_output.split(',') if value]
+    ema50_values = [value for value in ema_counts.ema50_output.split(',') if value]
+    ema100_values = [value for value in ema_counts.ema100_output.split(',') if value]
+    ema200_values = [value for value in ema_counts.ema200_output.split(',') if value]
 
     # Get historical financial data for the current stock, ordered by date
     historical_data = FinancialData.objects.filter(symbol=stock_data.symbol).order_by('-date')
@@ -476,3 +487,113 @@ def count_function(request):
 
     # Render your template or perform other actions
     return render(request, 'count_ema.html', context)
+  
+# Ema Count
+    
+from django.shortcuts import render
+from Stocks.models import FinancialData, EmaCounts
+from datetime import timedelta
+from django.utils import timezone
+
+def analyze_closing_vs_ema(request):
+    # Get the unique stock symbols
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+
+    # Limit the number of EmaCounts records to 20 (one for each distinct stock)
+    unique_symbols = unique_symbols[:20]
+
+
+    # Iterate through each stock symbol
+    for stock_symbol in unique_symbols:
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Calculate the date 200 days ago
+        start_date = current_date - timedelta(days=200)
+
+        # Retrieve ema20, ema50, ema100, and ema200, and closing prices for the specified stock and date range
+        data_points = FinancialData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price')
+
+        # Check if any data points were retrieved
+        if not data_points:
+            continue
+
+        # Initialize counters
+        ema20_counter = 0
+        ema50_counter = 0
+        ema100_counter = 0
+        ema200_counter = 0
+
+        # Iterate through data points from newest to oldest date for EMA20
+        for date, ema20, _, _, _, close_price in data_points:
+            # Calculate starting counters for EMA20
+            if close_price > ema20:
+                if ema20_counter < 0:
+                    break
+                ema20_counter += 1
+            elif close_price < ema20:
+                if ema20_counter > 0:
+                    break
+                ema20_counter -= 1
+
+        # Repeat the same structure for EMA50
+        for date, _, ema50, _, _, close_price in data_points:
+            # Calculate starting counters for EMA50
+            if close_price > ema50:
+                if ema50_counter < 0:
+                    break
+                ema50_counter += 1
+            elif close_price < ema50:
+                if ema50_counter > 0:
+                    break
+                ema50_counter -= 1
+
+        # Repeat the same structure for EMA100
+        for date, _, _, ema100, _, close_price in data_points:
+            # Calculate starting counters for EMA100
+            if close_price > ema100:
+                if ema100_counter < 0:
+                    break
+                ema100_counter += 1
+            elif close_price < ema100:
+                if ema100_counter > 0:
+                    break
+                ema100_counter -= 1
+
+        newest_date = None
+        # Repeat the same structure for EMA200
+        for date, _, _, _, ema200, close_price in data_points:
+            # Calculate starting counters for EMA200
+            if close_price > ema200:
+                if ema200_counter < 0:
+                    break
+                ema200_counter += 1
+            elif close_price < ema200:
+                if ema200_counter > 0:
+                    break
+                ema200_counter -= 1
+
+         # Store the newest date
+            if newest_date is None or date > newest_date:
+                newest_date = date
+
+        # Create and save only one EmaCounts instance for each stock
+        name = f"{stock_symbol}_{newest_date}"  # Modify the name-like field
+        ema_counts_instance, created = EmaCounts.objects.get_or_create(
+            stock_data=FinancialData.objects.get(symbol=stock_symbol, date=newest_date),
+            defaults={'ema20_output': ema20_counter, 'ema50_output': ema50_counter,
+                      'ema100_output': ema100_counter, 'ema200_output': ema200_counter},
+        )
+        ema_counts_instance.save()
+
+        # print(f"Starting ema20_counter for {stock_symbol} = {ema20_counter}")
+        # print(f"Starting ema50_counter for {stock_symbol} = {ema50_counter}")
+        # print(f"Starting ema100_counter for {stock_symbol} = {ema100_counter}")
+        # print(f"Starting ema200_counter for {stock_symbol} = {ema200_counter}")
+
+    # Pass the results to the template
+    context = {'result_list': []}  # Empty list as no results are being passed to the template
+    return render(request, 'analyze_output.html', context)

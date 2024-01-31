@@ -1,4 +1,4 @@
-<!-- your_template.html -->
+<!-- count_ema.html -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -15,7 +15,7 @@
         <thead>
             <tr>
                 <th>Symbol</th>
-                <th>Date</th>
+                <th>Latest Date</th>
                 <th>EMA20 Counter</th>
                 <th>EMA50 Counter</th>
                 <th>EMA100 Counter</th>
@@ -23,14 +23,14 @@
             </tr>
         </thead>
         <tbody>
-            {% for ema_count in ema_counts %}
+            {% for ema_counts in ema_counts_list %}
                 <tr>
-                    <td>{{ ema_count.stock_data.symbol }}</td>
-                    <td>{{ ema_count.stock_data.date }}</td>
-                    <td>{{ ema_count.ema20_counter }}</td>
-                    <td>{{ ema_count.ema50_counter }}</td>
-                    <td>{{ ema_count.ema100_counter }}</td>
-                    <td>{{ ema_count.ema200_counter }}</td>
+                    <td>{{ ema_counts.stock_data.symbol }}</td>
+                    <td>{{ ema_counts.stock_data.date }}</td>
+                    <td>{{ ema_counts.ema20_counter }}</td>
+                    <td>{{ ema_counts.ema50_counter }}</td>
+                    <td>{{ ema_counts.ema100_counter }}</td>
+                    <td>{{ ema_counts.ema200_counter }}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Output</title>
+</head>
+<body>
+    <h1>Analysis Output</h1>
+
+    {% if starting_counter is not None %}
+        <p>Starting Counter Value: {{ starting_counter }}</p>
+    {% else %}
+        <p>No data available for analysis.</p>
+    {% endif %}
+</body>
+</html>

@@ -22,4 +22,5 @@ urlpatterns = [
     # path('display_stock_data/', views.display_stock_data, name='display_stock_data'),
     # path('ema_counts/', views.ema_counts, name='ema_counts'),
     path('count_ema/', views.count_function, name='ema_counts'),
+    path('analyze/', views.analyze_closing_vs_ema, name='analyze_closing_vs_ema'),
 ]

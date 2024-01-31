@@ -81,6 +81,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-[![Kaditya67's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Kaditya67&show_icons=true&count_private=true&include_all_commits=true&theme=prussian)]()
+[![Kaditya67's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Kaditya67&show_icons=true&count_private=true&include_all_commits=true&theme=prussian)](https://github.com/Kaditya67/StockTracker-Django/tree/master)
 
 

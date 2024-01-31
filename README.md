@@ -7,7 +7,8 @@ StockTracker is a Django-based web application for tracking stock prices and man
 - [Features](#features)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+  - [Installation
+](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
@@ -45,6 +46,7 @@ Before you begin, ensure you have the following installed on your machine:
 
 3. Install requirements
 
+
   ```bash
      pip install -r requirements.txt
   ```
@@ -75,3 +77,10 @@ Contributions are welcome! If you would like to contribute to the project, pleas
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+---
+
+[![Kaditya67's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Kaditya67&show_icons=true&count_private=true&include_all_commits=true&theme=prussian)]()
+
+

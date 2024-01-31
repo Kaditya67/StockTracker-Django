@@ -17,8 +17,9 @@ urlpatterns = [
     path('about/', views.about, name='about'),
     # path('fetch-and-store/', views.fetch_and_store_stock_data, name='fetch_and_store_stock_data'),
     path('fetch_and_calculate_ema/', views.fetch_and_calculate_ema, name='fetch_and_store_stock_data'),
-    path('display/', views.display_stock_data, name='display_stock_data'),
+    # path('display/', views.display_stock_data, name='display_stock_data'),
     # path('latest_rsi_data/', views.latest_rsi_data, name='latest_rsi_data'),
-    path('display_stock_data/', views.display_stock_data, name='display_stock_data'),
-    path('ema_counts/', views.ema_counts, name='ema_counts'),
+    # path('display_stock_data/', views.display_stock_data, name='display_stock_data'),
+    # path('ema_counts/', views.ema_counts, name='ema_counts'),
+    path('count_ema/', views.count_function, name='ema_counts'),
 ]

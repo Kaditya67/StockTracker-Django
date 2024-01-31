@@ -151,12 +151,6 @@ def stocks(request):
     #         return render(request, 'error_template.html', {'error_message': 'Failed to fetch stock data'})
 
 
-
-    # views.py
-def display_stock_data(request):
-    stock_data = StockData.objects.all()
-    return render(request, 'admin_stock_data.html', {'stock_data': stock_data})
-
 ## Adding 200 days old data
 # # views.py
 # from django.shortcuts import render
@@ -235,8 +229,9 @@ def display_stock_data(request):
 
 ## Adding new Stocks data
 # views.py
+# views.py
 from django.shortcuts import render
-from .models import StockData, IndicatorValues
+from .models import FinancialData
 from datetime import datetime, timedelta
 from pandas_datareader import data as pdr
 import yfinance as yf
@@ -264,11 +259,11 @@ def calculate_rsi_and_rs(df, n=14):
 def fetch_and_calculate_ema(request):
     # Database setup
     stock_symbols = [
-    'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
-    'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
-    'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
-    'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS'
-]
+        'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
+        'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
+        'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
+        'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS'
+    ]
 
     # Override the data reader function
     yf.pdr_override()
@@ -277,7 +272,7 @@ def fetch_and_calculate_ema(request):
 
     for symbol in stock_symbols:
         # Check if data for the symbol is already present in the database
-        latest_data = StockData.objects.filter(symbol=symbol).order_by('-date').first()
+        latest_data = FinancialData.objects.filter(symbol=symbol).order_by('-date').first()
 
         if latest_data is not None:
             # Check if the latest data is up-to-date (within the last day)
@@ -310,15 +305,11 @@ def fetch_and_calculate_ema(request):
 
         # Store in the database
         for idx, row in df_new.iterrows():
-            stock_data, created = StockData.objects.get_or_create(
+            financial_data, created = FinancialData.objects.get_or_create(
                 symbol=symbol,
                 date=row.name,
-                defaults={'close_price': row['Close']}
-            )
-
-            indicator_values, created = IndicatorValues.objects.get_or_create(
-                stock_data=stock_data,
                 defaults={
+                    'close_price': row['Close'],
                     'ema20': None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
                     'ema50': None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
                     'ema100': None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
@@ -344,89 +335,144 @@ def fetch_and_calculate_ema(request):
 
     return render(request, 'fetch_and_calculate_ema.html', {'result_data': result_data})
 
-
 # Data diaplay
+
+# # closing_prices = StockData.objects.filter(symbol=stock).order_by('date').values_list('close_price', flat=True)
+# from django.shortcuts import render
+# from .models import StockData, IndicatorValues, EmaCounts
+
+# def ema_counts(request):
+#     stocks = StockData.objects.values_list('symbol', flat=True).distinct()
+#     ema_values = ['ema20', 'ema50', 'ema100', 'ema200']  # Add other EMAs as needed
+
+#     # Clear existing EmaCounts data
+#     EmaCounts.objects.all().delete()
+
+#     for stock in stocks:
+#         ema_counts_entry = EmaCounts.objects.create(stock_data=StockData.objects.filter(symbol=stock).first())
+
+#         # Fetch necessary data in a single query
+#         stock_data = StockData.objects.filter(symbol=stock).order_by('-date')
+#         indicator_values = IndicatorValues.objects.filter(stock_data__symbol=stock).order_by('-stock_data__date')
+
+#         ema_data = {}  # Store trend data for each EMA
+#         for ema in ema_values:
+#             ema_data[ema] = {
+#                 "current_trend": None,
+#                 "consecutive_days": 0,
+#                 "start_date": None,
+#             }
+
+#             # Fetch necessary values for the EMA
+#             ema_values_for_stock = indicator_values.values_list(ema, flat=True)
+#             closing_prices = stock_data.values_list('close_price', flat=True)
+#             dates = stock_data.values_list('date', flat=True)
+
+#             prev_closing_price = None
+#             for date, closing_price, ema_value in zip(dates, closing_prices, ema_values_for_stock):
+#                 if prev_closing_price is not None:
+#                     if closing_price > ema_value and prev_closing_price <= ema_value:
+#                         # New "Up" sequence starts
+#                         ema_data[ema]["current_trend"] = "Up"
+#                         ema_data[ema]["consecutive_days"] = 1
+#                         ema_data[ema]["start_date"] = date
+#                     elif closing_price < ema_value and prev_closing_price >= ema_value:
+#                         # New "Down" sequence starts
+#                         ema_data[ema]["current_trend"] = "Down"
+#                         ema_data[ema]["consecutive_days"] = 1
+#                         ema_data[ema]["start_date"] = date
+#                     elif closing_price > ema_value and prev_closing_price > ema_value:
+#                         # Continue "Up" sequence
+#                         ema_data[ema]["consecutive_days"] += 1
+#                     elif closing_price < ema_value and prev_closing_price < ema_value:
+#                         # Continue "Down" sequence
+#                         ema_data[ema]["consecutive_days"] += 1
+
+#                 prev_closing_price = closing_price
+
+#             # Build output strings for each EMA
+#             ema_output = {
+#                 ema: (
+#                     f"Up: {ema_data[ema]['consecutive_days']} days (from {ema_data[ema]['start_date']} to {dates[0]})\n"
+#                     if ema_data[ema]['current_trend'] == 'Up'
+#                     else f"Down: {ema_data[ema]['consecutive_days']} days (from {ema_data[ema]['start_date']} to {dates[0]})\n"
+#                 )
+#             }
+
+#             # Store the output strings in the EmaCounts object
+#             ema_counts_entry.__dict__[f'{ema}_output'] = ema_output[ema]
+
+#         ema_counts_entry.save()
+
+
+#     ema_count_data = EmaCounts.objects.all()
+
+#     return render(request, 'ema_counts.html', {'ema_count_data': ema_count_data})
 
 # views.py
 from django.shortcuts import render
-from .models import StockData, IndicatorValues
+from .models import FinancialData, EmaCounts
 
-def display_stock_data(request):
-    num_rows = int(request.GET.get('num_rows', 1))
-    stocks = StockData.objects.values_list('symbol', flat=True).distinct()
-    selected_stock = request.GET.get('stock', stocks.first())  # Get selected stock or default to the first stock
-    stock_data = StockData.objects.filter(symbol=selected_stock)[:num_rows]
-    indicator_values = IndicatorValues.objects.filter(stock_data__symbol=selected_stock)[:num_rows]
+def calculate_ema_counters(closing_prices, ema_values):
+    ema_counter = 0
 
-    return render(request, 'display_stock_data.html', {'stock_data': stock_data, 'indicator_values': indicator_values, 'num_rows': num_rows, 'stocks': stocks, 'selected_stock': selected_stock})
+    for i, closing_price in enumerate(closing_prices):
+        if i == 0:
+            # Initialize counter for the newest date
+            if closing_price > ema_values[i]:
+                ema_counter = 1
+            else:
+                ema_counter = -1
+        else:
+            # Compare closing price with EMA for the rest of the dates
+            if closing_price > ema_values[i]:
+                ema_counter += 1
+            else:
+                break  # Break the loop if behavior changes
 
+    return ema_counter
 
-# closing_prices = StockData.objects.filter(symbol=stock).order_by('date').values_list('close_price', flat=True)
-from django.shortcuts import render
-from .models import StockData, IndicatorValues, EmaCounts
+def calculate_ema_counts(stock_data):
+    ema_counts = EmaCounts.objects.get_or_create(stock_data=stock_data)[0]
 
-def ema_counts(request):
-    stocks = StockData.objects.values_list('symbol', flat=True).distinct()
-    ema_values = ['ema20', 'ema50', 'ema100', 'ema200']  # Add other EMAs as needed
+    ema20_values = [float(value) for value in ema_counts.ema20_output.split(',')]
+    ema50_values = [float(value) for value in ema_counts.ema50_output.split(',')]
+    ema100_values = [float(value) for value in ema_counts.ema100_output.split(',')]
+    ema200_values = [float(value) for value in ema_counts.ema200_output.split(',')]
 
-    # Clear existing EmaCounts data
-    EmaCounts.objects.all().delete()
+    # Get historical financial data for the current stock, ordered by date
+    historical_data = FinancialData.objects.filter(symbol=stock_data.symbol).order_by('-date')
+    closing_prices = [data.close_price for data in historical_data]
 
-    for stock in stocks:
-        ema_counts_entry = EmaCounts.objects.create(stock_data=StockData.objects.filter(symbol=stock).first())
+    # Calculate counters for each EMA
+    ema_counts.ema20_counter = calculate_ema_counters(closing_prices, ema20_values)
+    ema_counts.ema50_counter = calculate_ema_counters(closing_prices, ema50_values)
+    ema_counts.ema100_counter = calculate_ema_counters(closing_prices, ema100_values)
+    ema_counts.ema200_counter = calculate_ema_counters(closing_prices, ema200_values)
 
-        ema_data = {}  # Store trend data for each EMA
-        for ema in ema_values:
-            ema_data[ema] = {
-                "current_trend": None,
-                "consecutive_days": 0,
-                "start_date": None,
-            }
+    # Save the counters to the respective fields in EmaCounts model
+    ema_counts.save()
 
-            ema_values_for_stock = IndicatorValues.objects.filter(stock_data__symbol=stock).values_list(ema, flat=True)
-            closing_prices = StockData.objects.filter(symbol=stock).order_by('-date').values_list('close_price', flat=True)
-            closing_dates = StockData.objects.filter(symbol=stock).order_by('-date').values_list('date', flat=True)
+    return ema_counts
 
-            for date, (closing_price, ema_value) in zip(reversed(closing_dates), zip(reversed(closing_prices), reversed(ema_values_for_stock))):
-                if closing_price > ema_value:
-                    if ema_data[ema]["current_trend"] != "Up":
-                        # New "Up" sequence starts
-                        ema_data[ema]["current_trend"] = "Up"
-                        ema_data[ema]["consecutive_days"] = 1
-                        ema_data[ema]["start_date"] = date
-                    else:
-                        ema_data[ema]["consecutive_days"] += 1
-                elif closing_price < ema_value:
-                    if ema_data[ema]["current_trend"] != "Down":
-                        # New "Down" sequence starts
-                        ema_data[ema]["current_trend"] = "Down"
-                        ema_data[ema]["consecutive_days"] = 1
-                        ema_data[ema]["start_date"] = date
-                    else:
-                        ema_data[ema]["consecutive_days"] += 1
+def count_function(request):
+    # Get all distinct stock symbols
+    stocks_symbols = FinancialData.objects.values('symbol').distinct()
 
-            # Build output strings for each EMA
-            ema_output = {
-                "ema20": "",
-                "ema50": "",
-                "ema100": "",
-                "ema200": "",
-            }
+    ema_counts_list = []
 
-            for ema, trend_data in ema_data.items():
-                if trend_data["current_trend"] == "Up":
-                    ema_output[ema] += f"Up: {trend_data['consecutive_days']} days (from {trend_data['start_date']} to {date})\n"
-                elif trend_data["current_trend"] == "Down":
-                    ema_output[ema] += f"Down: {trend_data['consecutive_days']} days (from {trend_data['start_date']} to {date})\n"
+    # Iterate over each stock symbol
+    for stock_symbol in stocks_symbols:
+        stock_symbol = stock_symbol['symbol']
 
-            # Store the output strings in the EmaCounts object
-            ema_counts_entry.ema20_output = ema_output["ema20"]
-            ema_counts_entry.ema50_output = ema_output["ema50"]
-            ema_counts_entry.ema100_output = ema_output["ema100"]
-            ema_counts_entry.ema200_output = ema_output["ema200"]
+        # Get the latest financial data for the current stock
+        latest_data = FinancialData.objects.filter(symbol=stock_symbol).latest('date')
 
-        ema_counts_entry.save()
+        # Calculate EMA counters for the current stock
+        ema_counts = calculate_ema_counts(latest_data)
+        ema_counts_list.append(ema_counts)
 
-    ema_count_data = EmaCounts.objects.all()
+    context = {'ema_counts_list': ema_counts_list}
 
-    return render(request, 'ema_counts.html', {'ema_count_data': ema_count_data})
+    # Render your template or perform other actions
+    return render(request, 'count_ema.html', context)

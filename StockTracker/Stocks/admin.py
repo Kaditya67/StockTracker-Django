@@ -6,13 +6,13 @@ admin.site.register(ContactInformation)
 
 
 # stocks/admin.py
-from .models import StockData
+from .models import FinancialData
 
-admin.site.register(StockData)
+admin.site.register(FinancialData)
 
-from .models import IndicatorValues
+# from .models import IndicatorValues
 
-admin.site.register(IndicatorValues)
+# admin.site.register(IndicatorValues)
 from .models import EmaCounts
 
 admin.site.register(EmaCounts)

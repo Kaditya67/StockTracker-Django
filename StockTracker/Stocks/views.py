@@ -57,17 +57,20 @@ def forgetpassword(request):
 
 @login_required
 def stocks(request):
-    return render(request, 'stocks.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'stocks.html', {'current_path': current_path})
 
 
 @login_required
 def sectors(request):
-    return render(request, 'sectors.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'sectors.html', {'current_path': current_path})
 
 
 @login_required
 def portfolio(request):
-    return render(request, 'portfolio.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'portfolio.html',{'current_path': current_path})
 
 @login_required
 def closed_positions(request):
@@ -83,19 +86,23 @@ def closed_positions(request):
 
 @login_required
 def settings(request):
-    return render(request, 'settings.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'settings.html', {'current_path': current_path})
 
 @login_required
 def help(request):
-    return render(request, 'help.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'help.html', {'current_path': current_path})
 
 @login_required
 def about(request):
-    return render(request, 'about.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'about.html', {'current_path': current_path})
 
 @login_required
 def stocks(request):
-    return render(request, 'stocks.html')
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'stocks.html', {'current_path': current_path})
 
 ########################################## Calculating Values ##################################
 ## Adding new Stocks data
@@ -383,7 +390,8 @@ import base64
 import matplotlib.pyplot as plt
 from django.urls import resolve
 from .models import FinancialData
-def graph(request, symbol, ema_value):
+
+def graph_partial(request, symbol, ema_value):
     try:
         # Fetch the latest 200 records based on the symbol
         data = FinancialData.objects.filter(symbol=symbol).order_by('-id')[:200].values('date', 'close_price', f'ema{ema_value}')
@@ -412,7 +420,7 @@ def graph(request, symbol, ema_value):
         img_base64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
 
         stock = FinancialData.objects.values_list('symbol', flat=True).distinct()
-
+        current_path = resolve(request.path_info).url_name
         # Render the graph as HTML
         context = {
             'selected_symbol': symbol,

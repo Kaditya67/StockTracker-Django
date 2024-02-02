@@ -1,173 +1,323 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>StockTracker{% block title %} | {% endblock %}</title>
-      <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <head>
+    <title>{% block title %}My Site{% endblock %}</title>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
-  <title>Sectors</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-    }
-
-    body {
-      font-family: 'Arial', sans-serif;
-    }
-
-    table {
-      width: 100%;
-      margin-bottom: 1rem;
-      color: #212529;
-      border-collapse: collapse;
-      border-spacing: 0;
-    }
-    th,
-    td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    th {
-      background-color: #343A3F;
-      color: #fff;
-    }
-
-    td {
-      background-color: transparent;
-    }
-
-    .buy {
-      background-color: #28a745;
-      color: #fff;
-    }
-
-    .sell {
-      background-color: #dc3545;
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      table {
-        overflow-x: auto;
-        display: block;
+    <title>Sectors</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
       }
-    }
 
-    #sidebar {
-      height: 100%;
-      width: 150px;
-      position: fixed;
-      z-index: 1;
-      top: 0;
-      left: 0;
-      background-color: #343a40;
-      padding-top: 20px;
-    }
+      body {
+        font-family: "Arial", sans-serif;
+      }
 
-    #content {
-      margin-left: 250px;
-      padding: 20px;
-    }
-
-    @media (max-width: 768px) {
-      #sidebar {
+      table {
         width: 100%;
-        height: auto;
-        position: relative;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+      th,
+      td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      th {
+        background-color: #343a3f;
+        color: #fff;
+      }
+
+      td {
+        background-color: transparent;
+      }
+
+      .buy {
+        background-color: #28a745;
+        color: #fff;
+      }
+
+      .sell {
+        background-color: #dc3545;
+        color: #fff;
+      }
+
+      @media (max-width: 768px) {
+        table {
+          overflow-x: auto;
+          display: block;
+        }
+      }
+
+      #sidebar {
+        height: 100%;
+        width: 150px;
+        position: fixed;
+        z-index: 1;
+        top: 0;
+        left: 0;
+        background-color: #343a40;
+        padding-top: 20px;
       }
 
       #content {
-        margin-left: 0;
+        margin-left: 250px;
+        padding: 20px;
       }
-    }
-    .card-positive {
-            border-left: 5px solid green;
+
+      @media (max-width: 768px) {
+        #sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
         }
-    .card-negative {
-            border-left: 5px solid red;
+
+        #content {
+          margin-left: 0;
         }
-  </style>
+      }
+      .card-positive {
+        border-left: 5px solid green;
+      }
+      .card-negative {
+        border-left: 5px solid red;
+      }
+      #navbarToggle li {
+        background-color: #343a40;
+      }
+      #navbarToggle li.active {
+        background-color: #808080;
+        /* Add any other styles for the active state */
+      }
+
+      .nav-item.active {
+        background-color: #ffc0cb; /* Add your desired color */
+        color: #f00; /* Add your desired text color */
+        /* Add any other styles for the active state */
+      }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0"></script>
+    <script>
+      function changeColor(element) {
+        // Remove 'active' class from all nav items
+        document.querySelectorAll(".nav-item").forEach(function (item) {
+          item.classList.remove("active");
+        });
 
-</head>
-<body>
+        // Add 'active' class to the clicked nav item
+        element.classList.add("active");
+      }
+    </script>
+  </head>
+  <body>
     <div id="sidebar">
-  <div id="sidebar">
-    <nav class="navbar navbar-dark">
-      <a class="navbar-brand" href="#">StockTrack</a>
-    </nav>
-    <div class="collapse show" id="navbarToggle">
-      <ul class="nav flex-column">
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'home' %}"> <i class="fas fa-home"></i>  Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'portfolio' %}"> <i class="fas fa-briefcase"></i> Portfolio</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'sectors' %}"> <i class="fas fa-building"></i> Sectors</a>
-        </li>
+      <div id="sidebar">
+        <nav class="navbar navbar-dark">
+          <a class="navbar-brand" href="#">StockTrack</a>
+        </nav>
+        <div class="collapse show" id="navbarToggle">
+          <ul class="nav flex-column">
+            <!-- Home -->
+            <li
+              class="nav-item {% if current_path == 'home' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'home' %}">
+                <i class="fas fa-home"></i> Home
+              </a>
+            </li>
 
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'stocks' %}"> <i class="fas fa-building"></i> Stocks </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'settings' %}"> <i class="fas fa-bars"></i> Settings</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'help' %}"> <i class="fas fa-book"></i> Help</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-light" href="{% url 'about' %}"> <i class="fas fa-paper-plane"></i> About Us</a>
-        </li>
-          <button type="button" onclick="confirmLogout()" class="btn btn-danger">Logout</button>
-          
-      </ul>
+            <!-- Portfolio -->
+            <li
+              class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'portfolio' %}">
+                <i class="fas fa-briefcase"></i> Portfolio
+              </a>
+            </li>
+
+            <!-- Sectors -->
+            <li
+              class="nav-item {% if current_path == 'sectors' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'sectors' %}">
+                <i class="fas fa-building"></i> Sectors
+              </a>
+            </li>
+
+            <!-- Stocks -->
+            <li
+              class="nav-item {% if current_path == 'stocks' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'stocks' %}">
+                <i class="fas fa-building"></i> Stocks
+              </a>
+            </li>
+
+            <!-- Settings -->
+            <li
+              class="nav-item {% if current_path == 'settings' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'settings' %}">
+                <i class="fas fa-bars"></i> Settings
+              </a>
+            </li>
+
+            <!-- Help -->
+            <li
+              class="nav-item {% if current_path == 'help' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'help' %}">
+                <i class="fas fa-book"></i> Help
+              </a>
+            </li>
+
+            <!-- About Us -->
+            <li
+              class="nav-item {% if current_path == 'about' %}active{% endif %}"
+            >
+              <a class="nav-link text-light" href="{% url 'about' %}">
+                <i class="fas fa-paper-plane"></i> About Us
+              </a>
+            </li>
+
+            <li
+              class="nav-item {% if current_path == 'graph' and stock_name == 'AMZN' and ema_value == 20 %}active{% endif %}"
+            >
+              <a
+                class="nav-link text-light"
+                href="{% url 'graph' symbol='AMZN' ema_value=20 %}"
+              >
+
+                <i class="fa fa-line-chart" style="color: #ffffff"></i>
+                Performance
+              </a>
+            </li>
+
+            <br />
+            <button
+              type="button"
+              onclick="confirmLogout()"
+              class="btn btn-danger"
+            >
+              Logout
+            </button>
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>    </div>
 
     <div id="content">
-        {% block content %}
+      {% block content %}
 
-            <!-- Page specific content will go here -->
+      <!-- Page specific content will go here -->
 
-        {% endblock %}
+      {% endblock %}
     </div>
 
-   <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to Logout?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" onclick="confirmLogout()" class="btn btn-danger">Logout</button>
-                </div>
-            </div>
+    <!-- Logout Confirmation Modal -->
+    <div
+      class="modal fade"
+      id="logoutModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="logoutModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">Are you sure you want to Logout?</div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onclick="confirmLogout()"
+              class="btn btn-danger"
+            >
+              Logout
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-        <script>
-        function confirmLogout() {
-            {% comment %} if (confirm("Are you sure you want to logout?")) {
-                window.location.href = "{% url 'logout' %}";
-            } {% endcomment %}
+    <script>
+      {% comment %} function confirmLogout() {
+        if (confirm("Are you sure you want to logout?")) {
+          window.location.href = "{% url 'logout' %}?next={% url 'index' %}";
         }
-        </script>
+      } {% endcomment %}
+    </script>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+      function changeColor(clickedElement) {
+        // Remove 'active' class from all nav items
+        document.querySelectorAll(".nav-item").forEach(function (item) {
+          item.classList.remove("active");
+        });
+
+        // Add 'active' class to the clicked nav item
+        clickedElement.classList.add("active");
+      }
+
+      // Get the current URL
+      var currentUrl = window.location.href;
+
+      // Extract the path after the port
+      var pathAfterPort = window.location.pathname;
+
+      // Remove leading and trailing slashes from the path
+      var cleanPath = pathAfterPort.replace(/^\/|\/$/g, "");
+
+      // Find the corresponding sidebar item and change its color
+      var sidebarItem = document.querySelector(
+        '.nav-item[data-path="' + cleanPath + '"]'
+      );
+      if (sidebarItem) {
+        changeColor(sidebarItem);
+      }
+    </script>
+  </body>
+</html>

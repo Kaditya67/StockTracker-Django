@@ -21,6 +21,10 @@ urlpatterns = [
     # path('latest_rsi_data/', views.latest_rsi_data, name='latest_rsi_data'),
     # path('display_stock_data/', views.display_stock_data, name='display_stock_data'),
     # path('ema_counts/', views.ema_counts, name='ema_counts'),
-    path('count_ema/', views.count_function, name='ema_counts'),
+    # path('count_ema/', views.count_function, name='ema_counts'),
     path('analyze/', views.analyze_closing_vs_ema, name='analyze_closing_vs_ema'),
+    # path('graph/', views.graph, name='graph'),
+    path('graph/<str:symbol>/<int:ema_value>/', views.graph, name='graph'),
 ]
+    # path('graph/<str:symbol>/<int:ema_value>/', views.graph, name='graph'),
+

@@ -383,27 +383,21 @@ import base64
 import matplotlib.pyplot as plt
 from django.urls import resolve
 from .models import FinancialData
-
 def graph(request, symbol, ema_value):
     try:
         # Fetch the latest 200 records based on the symbol
-        data = FinancialData.objects.filter(symbol=symbol).order_by('-id')[:200].values('date', 'close_price', 'ema20', 'ema50', 'ema100', 'ema200')
+        data = FinancialData.objects.filter(symbol=symbol).order_by('-id')[:200].values('date', 'close_price', f'ema{ema_value}')
 
         # Unpack the data into separate lists
         dates = [entry['date'] for entry in data][::-1]  # Reverse the order to show the progress from the past
         closing_prices = [entry['close_price'] for entry in data][::-1]
-        ema20_values = [entry['ema20'] for entry in data][::-1]
-        ema50_values = [entry['ema50'] for entry in data][::-1]
-        ema100_values = [entry['ema100'] for entry in data][::-1]
-        ema200_values = [entry['ema200'] for entry in data][::-1]
+        ema_values = [entry[f'ema{ema_value}'] for entry in data][::-1]
 
         # Plotting
         plt.figure(figsize=(11, 6))
         plt.plot(dates, closing_prices, label=f'{symbol} Closing Prices')
-        plt.plot(dates, ema20_values, label=f'{symbol} EMA20')
-        plt.plot(dates, ema50_values, label=f'{symbol} EMA50')
-        plt.plot(dates, ema100_values, label=f'{symbol} EMA100')
-        plt.plot(dates, ema200_values, label=f'{symbol} EMA200')
+        plt.plot(dates, ema_values, label=f'{symbol} EMA{ema_value}')  # Corrected this line
+
         plt.xlabel('Date')
         plt.ylabel('Values')
         plt.title(f'{symbol} Closing Prices and EMA Values Over the Past 200 Records')
@@ -417,19 +411,20 @@ def graph(request, symbol, ema_value):
         img_buf.seek(0)
         img_base64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
 
-        stock= FinancialData.objects.value_list('symbol',flat=True).distinct()
+        stock = FinancialData.objects.values_list('symbol', flat=True).distinct()
 
         # Render the graph as HTML
         context = {
             'selected_symbol': symbol,
             'img_base64': img_base64,
-            'stock':stock
+            'stock': stock
         }
         return render(request, 'graph_partial.html', context)
 
     except Exception as e:
         # Handle specific exceptions if possible
         return HttpResponse(f"Error: {e}")
+
 # views.py
 def get_stock_data(request):
     symbol = request.GET.get('symbol', None)

@@ -111,13 +111,21 @@ from django.shortcuts import render
 from .models import FinancialData
 from datetime import datetime, timedelta
 from pandas_datareader import data as pdr
+# import yfinance as yf
+import yahoo_fin as yf
+import pandas as pd
+import numpy as np
+from django.shortcuts import render
+from .models import FinancialData
+from datetime import datetime, timedelta
+from pandas_datareader import data as pdr
 import yfinance as yf
 import pandas as pd
 import numpy as np
 
 def calculate_rsi(df, n=14):
     """
-    Calculate the Relative Strength Index (RSI) and Relative Strength (RS) for the given dataframe.
+    Calculate the Relative Strength Index (RSI) for the given dataframe.
 
     Parameters:
     df (DataFrame): The input dataframe containing the 'Close' prices.
@@ -125,7 +133,6 @@ def calculate_rsi(df, n=14):
 
     Returns:
     rsi (Series): The calculated Relative Strength Index.
-    rs (Series): The calculated Relative Strength.
     """
     close_price_changes = df['Close'].diff()
 
@@ -140,33 +147,31 @@ def calculate_rsi(df, n=14):
 
     # Replace NaN and -inf values with None
     rsi.replace([np.nan, -np.inf], None, inplace=True)
-    rs.replace([np.nan, -np.inf], None, inplace=True)
 
     return rsi
 
-def calculate_rs(df, nifty_df, n=14):
+def calculate_rs(df, nifty_df, n=14, start_column='Open', close_column='Close'):
     """
-    Calculate the Relative Strength for the given dataframe.
+    Calculate the Relative Strength (RS) for the given dataframe over a span of n days.
 
     Parameters:
-    df (DataFrame): The input dataframe containing the 'Close' prices.
-    nifty_df (DataFrame): The Nifty 50 dataframe containing the 'Close' prices.
-    n (int): The number of periods to consider for the RSI calculation (default is 14).
+    df (DataFrame): The input dataframe containing the asset's prices.
+    nifty_df (DataFrame): The Nifty 50 dataframe containing the NIFTY50's prices.
+    n (int): The number of periods to consider for the RS calculation (default is 14).
+    start_column (str): The column name representing the starting price of the asset (default is 'Open').
+    close_column (str): The column name representing the closing price of the asset (default is 'Close').
 
     Returns:
     rs (Series): The calculated Relative Strength.
     """
-    nifty_close_price_changes = nifty_df['Close'].diff()
+    # Calculate percentage change in asset's price over the past n days
+    asset_percentage_change = ((df[close_column] - df[start_column].shift(n)) / df[start_column].shift(n)) * 100
 
-    gains = nifty_close_price_changes.where(nifty_close_price_changes > 0, 0)
-    losses = -nifty_close_price_changes.where(nifty_close_price_changes < 0, 0)
+    # Calculate percentage change in NIFTY50's price over the past n days
+    nifty_percentage_change = ((nifty_df[close_column] - nifty_df[start_column].shift(n)) / nifty_df[start_column].shift(n)) * 100
 
-    average_gain = gains.rolling(window=n, min_periods=1).mean()
-    average_loss = losses.rolling(window=n, min_periods=1).mean()
-
-    rs = average_gain / average_loss
-    # Replace NaN and -inf values with None
-    rs.replace([np.nan, -np.inf], None, inplace=True)
+    # Calculate RS
+    rs = asset_percentage_change / nifty_percentage_change
 
     return rs
 
@@ -183,11 +188,7 @@ def fetch_and_calculate_ema(request):
         'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
         'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
         'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
-        'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS',
-        'NIFTY.NS', 'NIFTYAUTO.NS', 'NIFTYBANK.NS', 'NIFTYFINANCIALSERVICE.NS',
-        'NIFTYFMCG.NS', 'NIFTYHEALTHCARE.NS', 'NIFTYIT.NS', 'NIFTYMEDIA.NS',
-        'NIFTYMETAL.NS', 'NIFTYPHARMA.NS', 'NIFTYPRIVATEBANK.NS', 'IT.NS',
-        'NIFTYPSUBANK.NS', 'NIFTYREALTY.NS', 'NIFTYCONSUMERDURABLES.NS', 'NIFTYOILANDGAS.NS',
+        '^NSEI','^CNXAUTO','^NSEBANK','^NIFTYFIN','^CNXFMCG','^CNXPHARMA','^CNXIT','^CNXMEDIA','^CNXMETAL','^CNXPHARMA','^CNXPSUBANK','^CNXIT','^CNXPSUBANK','^CNXREALTY','^CNXCONSUMERDUR','^NSEI:ONGC-NSEI:RELIANCE-NSEI:GAIL-NSEI:BPCL-NSEI:IOC'   
     ]
 
     # Override the data reader function
@@ -207,7 +208,7 @@ def fetch_and_calculate_ema(request):
 
         # Fetch new data
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=400)  # Fetch data for the last 200 days
+        start_date = end_date - timedelta(days=400)  # Fetch data for the last 400 days
 
         try:
             df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
@@ -218,7 +219,7 @@ def fetch_and_calculate_ema(request):
         df_new['Date'] = pd.to_datetime(df_new.index)  # Convert index to DatetimeIndex
         df_new = df_new.set_index('Date')  # Set 'Date' as the new index
 
-        # Ensure 'close_price' column is present in the new dataframe
+        # Ensure 'Close' column is present in the new dataframe
         if 'Close' not in df_new.columns:
             # Handle the situation where 'Close' is not present
             # You might want to log a message or handle it based on your requirements
@@ -230,9 +231,19 @@ def fetch_and_calculate_ema(request):
         ema100 = df_new['Close'].ewm(span=100, adjust=False).mean()
         ema200 = df_new['Close'].ewm(span=200, adjust=False).mean()
 
-        # Calculate RSI and RS
-        rsi= calculate_rsi(df_new)
-        rs=calculate_rs(df_new, nifty_df)
+        # Calculate RSI
+        rsi = calculate_rsi(df_new)
+
+        # Fetch NIFTY50 data
+        try:
+            nifty_df = pdr.get_data_yahoo('NIFTY50', start=start_date, end=end_date)
+        except Exception as e:
+            print(f"Failed to fetch NIFTY50 data: {e}")
+            continue
+
+        # Calculate RS
+        rs = calculate_rs(df_new, nifty_df)
+
         # Store in the database
         for idx, row in df_new.iterrows():
             financial_data, created = FinancialData.objects.get_or_create(
@@ -240,12 +251,12 @@ def fetch_and_calculate_ema(request):
                 date=row.name,
                 defaults={
                     'close_price': row['Close'],
-                    'ema20': None if ema20.isna().loc[idx] else ema20.loc[idx],
-                    'ema50': None if ema50.isna().loc[idx] else ema50.loc[idx],
-                    'ema100': None if ema100.isna().loc[idx] else ema100.loc[idx],
-                    'ema200': None if ema200.isna().loc[idx] else ema200.loc[idx],
-                    'rsi': None if rsi.isna().loc[idx] else rsi.loc[idx],
-                    'rs': None if rs.isna().loc[idx] else rs.loc[idx],
+                    'ema20': None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
+                    'ema50': None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
+                    'ema100': None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
+                    'ema200': None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
+                    'rsi': None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
+                    'rs': None if pd.isna(rs.loc[idx]) else rs.loc[idx],
                     # Add other indicator values as needed
                 }
             )

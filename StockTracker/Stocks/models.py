@@ -70,6 +70,9 @@ class EmaCounts(models.Model):
     ema50_output = models.IntegerField()
     ema100_output = models.IntegerField()
     ema200_output = models.IntegerField()
+    rsi_output=models.IntegerField(null=True)
+    rs_output=models.IntegerField(null=True)
+    
     # Add other fields as needed
 
 

@@ -107,7 +107,6 @@ def stocks(request):
 ########################################## Calculating Values ##################################
 ## Adding new Stocks data
 # views.py
-# views.py
 from django.shortcuts import render
 from .models import FinancialData
 from datetime import datetime, timedelta
@@ -116,7 +115,18 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-def calculate_rsi_and_rs(df, n=14):
+def calculate_rsi(df, n=14):
+    """
+    Calculate the Relative Strength Index (RSI) and Relative Strength (RS) for the given dataframe.
+
+    Parameters:
+    df (DataFrame): The input dataframe containing the 'Close' prices.
+    n (int): The number of periods to consider for the RSI calculation (default is 14).
+
+    Returns:
+    rsi (Series): The calculated Relative Strength Index.
+    rs (Series): The calculated Relative Strength.
+    """
     close_price_changes = df['Close'].diff()
 
     gains = close_price_changes.where(close_price_changes > 0, 0)
@@ -132,15 +142,52 @@ def calculate_rsi_and_rs(df, n=14):
     rsi.replace([np.nan, -np.inf], None, inplace=True)
     rs.replace([np.nan, -np.inf], None, inplace=True)
 
-    return rsi, rs
+    return rsi
+
+def calculate_rs(df, nifty_df, n=14):
+    """
+    Calculate the Relative Strength for the given dataframe.
+
+    Parameters:
+    df (DataFrame): The input dataframe containing the 'Close' prices.
+    nifty_df (DataFrame): The Nifty 50 dataframe containing the 'Close' prices.
+    n (int): The number of periods to consider for the RSI calculation (default is 14).
+
+    Returns:
+    rs (Series): The calculated Relative Strength.
+    """
+    nifty_close_price_changes = nifty_df['Close'].diff()
+
+    gains = nifty_close_price_changes.where(nifty_close_price_changes > 0, 0)
+    losses = -nifty_close_price_changes.where(nifty_close_price_changes < 0, 0)
+
+    average_gain = gains.rolling(window=n, min_periods=1).mean()
+    average_loss = losses.rolling(window=n, min_periods=1).mean()
+
+    rs = average_gain / average_loss
+    # Replace NaN and -inf values with None
+    rs.replace([np.nan, -np.inf], None, inplace=True)
+
+    return rs
 
 def fetch_and_calculate_ema(request):
+    """
+    Fetches stock data, calculates EMA, RSI, RS, and stores the data in the database.
+    Args:
+        request: The HTTP request object.
+    Returns:
+        A rendered HTML page with the result data.
+    """
     # Database setup
     stock_symbols = [
         'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
         'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
         'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
-        'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS'
+        'AXISBANK.NS', 'BAJAJFINSV.NS', 'ONGC.NS', 'GRASIM.NS', 'IOC.NS',
+        'NIFTY.NS', 'NIFTYAUTO.NS', 'NIFTYBANK.NS', 'NIFTYFINANCIALSERVICE.NS',
+        'NIFTYFMCG.NS', 'NIFTYHEALTHCARE.NS', 'NIFTYIT.NS', 'NIFTYMEDIA.NS',
+        'NIFTYMETAL.NS', 'NIFTYPHARMA.NS', 'NIFTYPRIVATEBANK.NS', 'IT.NS',
+        'NIFTYPSUBANK.NS', 'NIFTYREALTY.NS', 'NIFTYCONSUMERDURABLES.NS', 'NIFTYOILANDGAS.NS',
     ]
 
     # Override the data reader function
@@ -162,7 +209,12 @@ def fetch_and_calculate_ema(request):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=400)  # Fetch data for the last 200 days
 
-        df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        try:
+            df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        except Exception as e:
+            print(f"Failed to fetch data for {symbol}: {e}")
+            continue
+
         df_new['Date'] = pd.to_datetime(df_new.index)  # Convert index to DatetimeIndex
         df_new = df_new.set_index('Date')  # Set 'Date' as the new index
 
@@ -179,8 +231,8 @@ def fetch_and_calculate_ema(request):
         ema200 = df_new['Close'].ewm(span=200, adjust=False).mean()
 
         # Calculate RSI and RS
-        rsi, rs = calculate_rsi_and_rs(df_new)
-
+        rsi= calculate_rsi(df_new)
+        rs=calculate_rs(df_new, nifty_df)
         # Store in the database
         for idx, row in df_new.iterrows():
             financial_data, created = FinancialData.objects.get_or_create(
@@ -188,12 +240,12 @@ def fetch_and_calculate_ema(request):
                 date=row.name,
                 defaults={
                     'close_price': row['Close'],
-                    'ema20': None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
-                    'ema50': None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
-                    'ema100': None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
-                    'ema200': None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
-                    'rsi': None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
-                    'rs': None if pd.isna(rs.loc[idx]) else rs.loc[idx],
+                    'ema20': None if ema20.isna().loc[idx] else ema20.loc[idx],
+                    'ema50': None if ema50.isna().loc[idx] else ema50.loc[idx],
+                    'ema100': None if ema100.isna().loc[idx] else ema100.loc[idx],
+                    'ema200': None if ema200.isna().loc[idx] else ema200.loc[idx],
+                    'rsi': None if rsi.isna().loc[idx] else rsi.loc[idx],
+                    'rs': None if rs.isna().loc[idx] else rs.loc[idx],
                     # Add other indicator values as needed
                 }
             )
@@ -214,61 +266,61 @@ def fetch_and_calculate_ema(request):
     return render(request, 'fetch_and_calculate_ema.html', {'result_data': result_data})
 
 
-# views.py
-from django.shortcuts import render
-from .models import FinancialData, EmaCounts
+# # views.py
+# from django.shortcuts import render
+# from .models import FinancialData, EmaCounts
 
-def calculate_ema_counters(closing_prices, ema_values):
-    ema_counter = 0
+# def calculate_ema_counters(closing_prices, ema_values):
+#     ema_counter = 0
 
-    for i, closing_price in enumerate(closing_prices):
-        if i < len(ema_values):
-            try:
-                ema_value = float(ema_values[i])
-                if i == 0:
-                    # Initialize counter for the newest date
-                    if closing_price > ema_value:
-                        ema_counter = 1
-                    else:
-                        ema_counter = -1
-                else:
-                    # Compare closing price with EMA for the rest of the dates
-                    if closing_price > ema_value:
-                        ema_counter += 1
-                    else:
-                        break  # Break the loop if behavior changes
-            except ValueError:
-                # Handle the case where ema_values contain non-numeric values
-                break
-        else:
-            # Handle the case where the ema_values list is shorter than the closing_prices list
-            break
+#     for i, closing_price in enumerate(closing_prices):
+#         if i < len(ema_values):
+#             try:
+#                 ema_value = float(ema_values[i])
+#                 if i == 0:
+#                     # Initialize counter for the newest date
+#                     if closing_price > ema_value:
+#                         ema_counter = 1
+#                     else:
+#                         ema_counter = -1
+#                 else:
+#                     # Compare closing price with EMA for the rest of the dates
+#                     if closing_price > ema_value:
+#                         ema_counter += 1
+#                     else:
+#                         break  # Break the loop if behavior changes
+#             except ValueError:
+#                 # Handle the case where ema_values contain non-numeric values
+#                 break
+#         else:
+#             # Handle the case where the ema_values list is shorter than the closing_prices list
+#             break
 
-    return ema_counter
+#     return ema_counter
 
-def calculate_ema_counts(stock_data):
-    ema_counts, created = EmaCounts.objects.get_or_create(stock_data=stock_data)
+#def calculate_ema_counts(stock_data):
+#   ema_counts, created = EmaCounts.objects.get_or_create(stock_data=stock_data)
 
     # Split ema_output fields only if they are not empty
-    ema20_values = [value for value in ema_counts.ema20_output.split(',') if value]
-    ema50_values = [value for value in ema_counts.ema50_output.split(',') if value]
-    ema100_values = [value for value in ema_counts.ema100_output.split(',') if value]
-    ema200_values = [value for value in ema_counts.ema200_output.split(',') if value]
+#    ema20_values = [value for value in ema_counts.ema20_output.split(',') if value]
+#    ema50_values = [value for value in ema_counts.ema50_output.split(',') if value]
+#    ema100_values = [value for value in ema_counts.ema100_output.split(',') if value]
+#    ema200_values = [value for value in ema_counts.ema200_output.split(',') if value]
 
     # Get historical financial data for the current stock, ordered by date
-    historical_data = FinancialData.objects.filter(symbol=stock_data.symbol).order_by('-date')
-    closing_prices = [data.close_price for data in historical_data]
+#    historical_data = FinancialData.objects.filter(symbol=stock_data.symbol).order_by('-date')
+#    closing_prices = [data.close_price for data in historical_data]
 
     # Calculate counters for each EMA
-    ema_counts.ema20_counter = calculate_ema_counters(closing_prices, ema20_values)
-    ema_counts.ema50_counter = calculate_ema_counters(closing_prices, ema50_values)
-    ema_counts.ema100_counter = calculate_ema_counters(closing_prices, ema100_values)
-    ema_counts.ema200_counter = calculate_ema_counters(closing_prices, ema200_values)
+#    ema_counts.ema20_counter = calculate_ema_counters(closing_prices, ema20_values)
+#    ema_counts.ema50_counter = calculate_ema_counters(closing_prices, ema50_values)
+#    ema_counts.ema100_counter = calculate_ema_counters(closing_prices, ema100_values)
+#    ema_counts.ema200_counter = calculate_ema_counters(closing_prices, ema200_values)
 
     # Save the counters to the respective fields in EmaCounts model
-    ema_counts.save()
+#    ema_counts.save()
 
-    return ema_counts
+#    return ema_counts
 
 # Ema Count
     
@@ -278,6 +330,9 @@ from datetime import timedelta
 from django.utils import timezone
 
 def analyze_closing_vs_ema(request):
+    """
+    This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
+    """
     # Get the unique stock symbols
     unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
 
@@ -297,7 +352,7 @@ def analyze_closing_vs_ema(request):
         data_points = FinancialData.objects.filter(
             symbol=stock_symbol,
             date__range=[start_date, current_date]
-        ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price')
+        ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price','rsi','rs')
 
         # Check if any data points were retrieved
         if not data_points:
@@ -308,9 +363,32 @@ def analyze_closing_vs_ema(request):
         ema50_counter = 0
         ema100_counter = 0
         ema200_counter = 0
+        rsi_counter=0
+        rs_counter=0
+
+        for date, _, _, _,_, _,rsi,_ in data_points:
+            # Calculate starting counters for EMA200
+            if rsi >= 50.00:
+                if rsi_counter < 0:
+                    break
+                rsi_counter += 1
+            else:
+                if rsi_counter > 0:
+                    break
+                rsi_counter -= 1
+        for date, _, _, _,_, _,_,rs in data_points:
+            # Calculate starting counters for EMA200
+            if rs >= 1:
+                if rs_counter < 0:
+                    break
+                rs_counter += 1
+            else:
+                if rs_counter > 0:
+                    break
+                rs_counter -= 1
 
         # Iterate through data points from newest to oldest date for EMA20
-        for date, ema20, _, _, _, close_price in data_points:
+        for date, ema20, _, _, _, close_price,_,_ in data_points:
             # Calculate starting counters for EMA20
             if close_price > ema20:
                 if ema20_counter < 0:
@@ -322,7 +400,7 @@ def analyze_closing_vs_ema(request):
                 ema20_counter -= 1
 
         # Repeat the same structure for EMA50
-        for date, _, ema50, _, _, close_price in data_points:
+        for date, _, ema50, _, _, close_price,_,_ in data_points:
             # Calculate starting counters for EMA50
             if close_price > ema50:
                 if ema50_counter < 0:
@@ -334,7 +412,7 @@ def analyze_closing_vs_ema(request):
                 ema50_counter -= 1
 
         # Repeat the same structure for EMA100
-        for date, _, _, ema100, _, close_price in data_points:
+        for date, _, _, ema100, _, close_price,_,_ in data_points:
             # Calculate starting counters for EMA100
             if close_price > ema100:
                 if ema100_counter < 0:
@@ -347,7 +425,7 @@ def analyze_closing_vs_ema(request):
 
         newest_date = None
         # Repeat the same structure for EMA200
-        for date, _, _, _, ema200, close_price in data_points:
+        for date, _, _, _, ema200, close_price,_,_ in data_points:
             # Calculate starting counters for EMA200
             if close_price > ema200:
                 if ema200_counter < 0:
@@ -357,6 +435,7 @@ def analyze_closing_vs_ema(request):
                 if ema200_counter > 0:
                     break
                 ema200_counter -= 1
+        
 
          # Store the newest date
             if newest_date is None or date > newest_date:
@@ -366,9 +445,23 @@ def analyze_closing_vs_ema(request):
         name = f"{stock_symbol}_{newest_date}"  # Modify the name-like field
         ema_counts_instance, created = EmaCounts.objects.get_or_create(
             stock_data=FinancialData.objects.get(symbol=stock_symbol, date=newest_date),
-            defaults={'ema20_output': ema20_counter, 'ema50_output': ema50_counter,
-                      'ema100_output': ema100_counter, 'ema200_output': ema200_counter},
+            defaults={
+                'ema20_output': ema20_counter,
+                'ema50_output': ema50_counter,
+                'ema100_output': ema100_counter,
+                'ema200_output': ema200_counter,
+                'rsi_output': rsi_counter,
+                'rs_output': rs_counter
+            },
         )
+
+        # ema_counts_instance, created = EmaCounts.objects.get_or_create(
+        #     stock_data=FinancialData.objects.get(symbol=stock_symbol, date=newest_date),
+        #     defaults={'ema20_output': ema20_counter, 'ema50_output': ema50_counter,
+        #               'ema100_output': ema100_counter, 'ema200_output': ema200_counter,
+        #               'rsi_output':rsi_counter,'rs_output':rs_counter
+        #               },
+        # )
         ema_counts_instance.save()
 
         # print(f"Starting ema20_counter for {stock_symbol} = {ema20_counter}")
@@ -392,6 +485,15 @@ from django.urls import resolve
 from .models import FinancialData
 
 def graph_partial(request, symbol, ema_value):
+    """
+    Fetches the latest 200 records of financial data based on the provided symbol and plots the closing prices and EMA values over the past 200 records. 
+    Parameters:
+        request: The HTTP request object
+        symbol: The symbol for the financial data
+        ema_value: The value for the EMA calculation
+    Returns:
+        HTML rendering of the graph_partial.html template with the selected symbol, base64 encoded image, and distinct stock symbols
+    """
     try:
         # Fetch the latest 200 records based on the symbol
         data = FinancialData.objects.filter(symbol=symbol).order_by('-id')[:200].values('date', 'close_price', f'ema{ema_value}')

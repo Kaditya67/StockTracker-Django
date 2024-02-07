@@ -116,7 +116,7 @@ import yahoo_fin as yf
 import pandas as pd
 import numpy as np
 from django.shortcuts import render
-from .models import FinancialData
+from .models import FinancialData,SectorData
 from datetime import datetime, timedelta
 from pandas_datareader import data as pdr
 import yfinance as yf
@@ -187,8 +187,7 @@ def fetch_and_calculate_ema(request):
     stock_symbols = [
         'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
         'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
-        'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS',
-        '^NSEI','^CNXAUTO','^NSEBANK','^NIFTYFIN','^CNXFMCG','^CNXPHARMA','^CNXIT','^CNXMEDIA','^CNXMETAL','^CNXPHARMA','^CNXPSUBANK','^CNXIT','^CNXPSUBANK','^CNXREALTY','^CNXCONSUMERDUR','^NSEI:ONGC-NSEI:RELIANCE-NSEI:GAIL-NSEI:BPCL-NSEI:IOC'   
+        'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS'
     ]
 
     # Override the data reader function
@@ -236,7 +235,7 @@ def fetch_and_calculate_ema(request):
 
         # Fetch NIFTY50 data
         try:
-            nifty_df = pdr.get_data_yahoo('NIFTY50', start=start_date, end=end_date)
+            nifty_df = pdr.get_data_yahoo('^NSEI', start=start_date, end=end_date)
         except Exception as e:
             print(f"Failed to fetch NIFTY50 data: {e}")
             continue
@@ -247,6 +246,104 @@ def fetch_and_calculate_ema(request):
         # Store in the database
         for idx, row in df_new.iterrows():
             financial_data, created = FinancialData.objects.get_or_create(
+                symbol=symbol,
+                date=row.name,
+                defaults={
+                    'close_price': row['Close'],
+                    'ema20': None if pd.isna(ema20.loc[idx]) else ema20.loc[idx],
+                    'ema50': None if pd.isna(ema50.loc[idx]) else ema50.loc[idx],
+                    'ema100': None if pd.isna(ema100.loc[idx]) else ema100.loc[idx],
+                    'ema200': None if pd.isna(ema200.loc[idx]) else ema200.loc[idx],
+                    'rsi': None if pd.isna(rsi.loc[idx]) else rsi.loc[idx],
+                    'rs': None if pd.isna(rs.loc[idx]) else rs.loc[idx],
+                    # Add other indicator values as needed
+                }
+            )
+
+            result_data.append({
+                'symbol': symbol,
+                'date': row.name,
+                'close_price': row['Close'],
+                'ema20': ema20.loc[idx],
+                'ema50': ema50.loc[idx],
+                'ema100': ema100.loc[idx],
+                'ema200': ema200.loc[idx],
+                'rsi': rsi.loc[idx],
+                'rs': rs.loc[idx],
+                # Add other indicator values as needed
+            })
+
+    return render(request, 'fetch_and_calculate_ema.html', {'result_data': result_data})
+
+def fetch_and_calculate_ema_sector(request):
+    """
+    Fetches stock data, calculates EMA, RSI, RS, and stores the data in the database.
+    Args:
+        request: The HTTP request object.
+    Returns:
+        A rendered HTML page with the result data.
+    """
+    # Database setup
+    stock_symbols = [
+        '^NSEI','^CNXAUTO','^NSEBANK','^NIFTYFIN','^CNXFMCG','^CNXPHARMA','^CNXIT','^CNXMEDIA','^CNXMETAL','^CNXPHARMA','^CNXPSUBANK','^CNXIT','^CNXPSUBANK','^CNXREALTY','^CNXCONSUMERDUR','^NSEI:ONGC-NSEI:RELIANCE-NSEI:GAIL-NSEI:BPCL-NSEI:IOC'  
+    ]
+
+    # Override the data reader function
+    yf.pdr_override()
+
+    result_data = []
+
+    for symbol in stock_symbols:
+        # Check if data for the symbol is already present in the database
+        latest_data = SectorData.objects.filter(symbol=symbol).order_by('-date').first()
+
+        if latest_data is not None:
+            # Check if the latest data is up-to-date (within the last day)
+            if (datetime.now().date() - latest_data.date).days <= 1:
+                # Skip fetching new data if it's up-to-date
+                continue
+
+        # Fetch new data
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=400)  # Fetch data for the last 400 days
+
+        try:
+            df_new = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        except Exception as e:
+            print(f"Failed to fetch data for {symbol}: {e}")
+            continue
+
+        df_new['Date'] = pd.to_datetime(df_new.index)  # Convert index to DatetimeIndex
+        df_new = df_new.set_index('Date')  # Set 'Date' as the new index
+
+        # Ensure 'Close' column is present in the new dataframe
+        if 'Close' not in df_new.columns:
+            # Handle the situation where 'Close' is not present
+            # You might want to log a message or handle it based on your requirements
+            continue
+
+        # Calculate EMA
+        ema20 = df_new['Close'].ewm(span=20, adjust=False).mean()
+        ema50 = df_new['Close'].ewm(span=50, adjust=False).mean()
+        ema100 = df_new['Close'].ewm(span=100, adjust=False).mean()
+        ema200 = df_new['Close'].ewm(span=200, adjust=False).mean()
+
+        # Calculate RSI
+        rsi = calculate_rsi(df_new)
+
+        # Fetch NIFTY50 data
+        try:
+            nifty_df = pdr.get_data_yahoo('^NSEI', start=start_date, end=end_date)
+        except Exception as e:
+            print(f"Failed to fetch NIFTY50 data: {e}")
+            continue
+
+        # Calculate RS
+        rs = calculate_rs(df_new, nifty_df)
+
+        # Store in the database
+        for idx, row in df_new.iterrows():
+            sector_data, created = SectorData.objects.get_or_create(
                 symbol=symbol,
                 date=row.name,
                 defaults={
@@ -336,7 +433,7 @@ def fetch_and_calculate_ema(request):
 # Ema Count
     
 from django.shortcuts import render
-from Stocks.models import FinancialData, EmaCounts
+from Stocks.models import FinancialData, EmaCounts,SectorData
 from datetime import timedelta
 from django.utils import timezone
 
@@ -483,6 +580,150 @@ def analyze_closing_vs_ema(request):
     # Pass the results to the template
     context = {'result_list': []}  # Empty list as no results are being passed to the template
     return render(request, 'analyze_output.html', context)
+
+# def analyze_closing_vs_ema_sector(request):
+#     """
+#     This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
+#     """
+#     # Get the unique stock symbols
+#     unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+
+#     # Limit the number of EmaCounts records to 20 (one for each distinct stock)
+#     unique_symbols = unique_symbols[:20]
+
+
+#     # Iterate through each stock symbol
+#     for stock_symbol in unique_symbols:
+#         # Get the current date
+#         current_date = timezone.now().date()
+
+#         # Calculate the date 200 days ago
+#         start_date = current_date - timedelta(days=200)
+
+#         # Retrieve ema20, ema50, ema100, and ema200, and closing prices for the specified stock and date range
+#         data_points = SectorData.objects.filter(
+#             symbol=stock_symbol,
+#             date__range=[start_date, current_date]
+#         ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price','rsi','rs')
+
+#         # Check if any data points were retrieved
+#         if not data_points:
+#             continue
+
+#         # Initialize counters
+#         ema20_counter = 0
+#         ema50_counter = 0
+#         ema100_counter = 0
+#         ema200_counter = 0
+#         rsi_counter=0
+#         rs_counter=0
+
+#         for date, _, _, _,_, _,rsi,_ in data_points:
+#             # Calculate starting counters for EMA200
+#             if rsi >= 50.00:
+#                 if rsi_counter < 0:
+#                     break
+#                 rsi_counter += 1
+#             else:
+#                 if rsi_counter > 0:
+#                     break
+#                 rsi_counter -= 1
+#         for date, _, _, _,_, _,_,rs in data_points:
+#             # Calculate starting counters for EMA200
+#             if rs >= 1:
+#                 if rs_counter < 0:
+#                     break
+#                 rs_counter += 1
+#             else:
+#                 if rs_counter > 0:
+#                     break
+#                 rs_counter -= 1
+
+#         # Iterate through data points from newest to oldest date for EMA20
+#         for date, ema20, _, _, _, close_price,_,_ in data_points:
+#             # Calculate starting counters for EMA20
+#             if close_price > ema20:
+#                 if ema20_counter < 0:
+#                     break
+#                 ema20_counter += 1
+#             elif close_price < ema20:
+#                 if ema20_counter > 0:
+#                     break
+#                 ema20_counter -= 1
+
+#         # Repeat the same structure for EMA50
+#         for date, _, ema50, _, _, close_price,_,_ in data_points:
+#             # Calculate starting counters for EMA50
+#             if close_price > ema50:
+#                 if ema50_counter < 0:
+#                     break
+#                 ema50_counter += 1
+#             elif close_price < ema50:
+#                 if ema50_counter > 0:
+#                     break
+#                 ema50_counter -= 1
+
+#         # Repeat the same structure for EMA100
+#         for date, _, _, ema100, _, close_price,_,_ in data_points:
+#             # Calculate starting counters for EMA100
+#             if close_price > ema100:
+#                 if ema100_counter < 0:
+#                     break
+#                 ema100_counter += 1
+#             elif close_price < ema100:
+#                 if ema100_counter > 0:
+#                     break
+#                 ema100_counter -= 1
+
+#         newest_date = None
+#         # Repeat the same structure for EMA200
+#         for date, _, _, _, ema200, close_price,_,_ in data_points:
+#             # Calculate starting counters for EMA200
+#             if close_price > ema200:
+#                 if ema200_counter < 0:
+#                     break
+#                 ema200_counter += 1
+#             elif close_price < ema200:
+#                 if ema200_counter > 0:
+#                     break
+#                 ema200_counter -= 1
+        
+
+#          # Store the newest date
+#             if newest_date is None or date > newest_date:
+#                 newest_date = date
+
+#         # Create and save only one EmaCounts instance for each stock
+#         name = f"{stock_symbol}_{newest_date}"  # Modify the name-like field
+#         ema_counts_instance, created = EmaCounts.objects.get_or_create(
+#             stock_data=SectorData.objects.get(symbol=stock_symbol, date=newest_date),
+#             defaults={
+#                 'ema20_output': ema20_counter,
+#                 'ema50_output': ema50_counter,
+#                 'ema100_output': ema100_counter,
+#                 'ema200_output': ema200_counter,
+#                 'rsi_output': rsi_counter,
+#                 'rs_output': rs_counter
+#             },
+#         )
+
+#         # ema_counts_instance, created = EmaCounts.objects.get_or_create(
+#         #     stock_data=FinancialData.objects.get(symbol=stock_symbol, date=newest_date),
+#         #     defaults={'ema20_output': ema20_counter, 'ema50_output': ema50_counter,
+#         #               'ema100_output': ema100_counter, 'ema200_output': ema200_counter,
+#         #               'rsi_output':rsi_counter,'rs_output':rs_counter
+#         #               },
+#         # )
+#         ema_counts_instance.save()
+
+#         # print(f"Starting ema20_counter for {stock_symbol} = {ema20_counter}")
+#         # print(f"Starting ema50_counter for {stock_symbol} = {ema50_counter}")
+#         # print(f"Starting ema100_counter for {stock_symbol} = {ema100_counter}")
+#         # print(f"Starting ema200_counter for {stock_symbol} = {ema200_counter}")
+
+#     # Pass the results to the template
+#     context = {'result_list': []}  # Empty list as no results are being passed to the template
+#     return render(request, 'analyze_output.html', context)
 
 #### Graph Calculations ########
 

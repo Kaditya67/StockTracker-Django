@@ -9,6 +9,10 @@ admin.site.register(ContactInformation)
 from .models import FinancialData
 
 admin.site.register(FinancialData)
+# stocks/admin.py
+from .models import SectorData
+
+admin.site.register(SectorData)
 
 # from .models import IndicatorValues
 

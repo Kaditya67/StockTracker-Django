@@ -91,3 +91,20 @@ class EmaCounts(models.Model):
 
     def __str__(self):
         return f"{self.stock_data.symbol} - {self.stock_data.date}"
+
+from django.db import models
+from .models import SectorData
+
+class EmaCountsSector(models.Model):
+    stock_data = models.ForeignKey(SectorData, on_delete=models.CASCADE)
+    ema20_output = models.IntegerField()
+    ema50_output = models.IntegerField()
+    ema100_output = models.IntegerField()
+    ema200_output = models.IntegerField()
+    rsi_output = models.IntegerField(null=True)
+    rs_output = models.IntegerField(null=True)
+    
+    # Add other fields as needed
+
+    def __str__(self):
+        return f"{self.stock_data.symbol} - {self.stock_data.date}"

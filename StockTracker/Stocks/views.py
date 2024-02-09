@@ -581,149 +581,149 @@ def analyze_closing_vs_ema(request):
     context = {'result_list': []}  # Empty list as no results are being passed to the template
     return render(request, 'analyze_output.html', context)
 
-# def analyze_closing_vs_ema_sector(request):
-#     """
-#     This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
-#     """
-#     # Get the unique stock symbols
-#     unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+from django.shortcuts import render
+from .models import SectorData, EmaCountsSector
+from django.utils import timezone
+from datetime import timedelta
+from datetime import timedelta
 
-#     # Limit the number of EmaCounts records to 20 (one for each distinct stock)
-#     unique_symbols = unique_symbols[:20]
+def analyze_closing_vs_ema_sector(request):
+    """
+    This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
+    """
+    # Get the unique stock symbols
+    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
 
+    # Limit the number of EmaCounts records to 20 (one for each distinct stock)
+    unique_symbols = unique_symbols[:20]
 
-#     # Iterate through each stock symbol
-#     for stock_symbol in unique_symbols:
-#         # Get the current date
-#         current_date = timezone.now().date()
+    # Iterate through each stock symbol
+    for stock_symbol in unique_symbols:
+        # Get the current date
+        current_date = timezone.now().date()
 
-#         # Calculate the date 200 days ago
-#         start_date = current_date - timedelta(days=200)
+        # Calculate the date 200 days ago
+        start_date = current_date - timedelta(days=200)
 
-#         # Retrieve ema20, ema50, ema100, and ema200, and closing prices for the specified stock and date range
-#         data_points = SectorData.objects.filter(
-#             symbol=stock_symbol,
-#             date__range=[start_date, current_date]
-#         ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price','rsi','rs')
+        # Retrieve ema20, ema50, ema100, and ema200, and closing prices for the specified stock and date range
+        data_points = SectorData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('-date').values_list('date', 'ema20', 'ema50', 'ema100', 'ema200', 'close_price', 'rsi', 'rs')
 
-#         # Check if any data points were retrieved
-#         if not data_points:
-#             continue
+        # Check if any data points were retrieved
+        if not data_points:
+            continue
 
-#         # Initialize counters
-#         ema20_counter = 0
-#         ema50_counter = 0
-#         ema100_counter = 0
-#         ema200_counter = 0
-#         rsi_counter=0
-#         rs_counter=0
+        # Initialize counters
+        ema20_counter = 0
+        ema50_counter = 0
+        ema100_counter = 0
+        ema200_counter = 0
+        rsi_counter = 0
+        rs_counter = 0
 
-#         for date, _, _, _,_, _,rsi,_ in data_points:
-#             # Calculate starting counters for EMA200
-#             if rsi >= 50.00:
-#                 if rsi_counter < 0:
-#                     break
-#                 rsi_counter += 1
-#             else:
-#                 if rsi_counter > 0:
-#                     break
-#                 rsi_counter -= 1
-#         for date, _, _, _,_, _,_,rs in data_points:
-#             # Calculate starting counters for EMA200
-#             if rs >= 1:
-#                 if rs_counter < 0:
-#                     break
-#                 rs_counter += 1
-#             else:
-#                 if rs_counter > 0:
-#                     break
-#                 rs_counter -= 1
+        for date, _, _, _, _, _, rsi, _ in data_points:
+            # Calculate starting counters for RSI
+            if rsi is not None:
+                if rsi >= 50.00:
+                    if rsi_counter < 0:
+                        break
+                    rsi_counter += 1
+                else:
+                    if rsi_counter > 0:
+                        break
+                    rsi_counter -= 1
 
-#         # Iterate through data points from newest to oldest date for EMA20
-#         for date, ema20, _, _, _, close_price,_,_ in data_points:
-#             # Calculate starting counters for EMA20
-#             if close_price > ema20:
-#                 if ema20_counter < 0:
-#                     break
-#                 ema20_counter += 1
-#             elif close_price < ema20:
-#                 if ema20_counter > 0:
-#                     break
-#                 ema20_counter -= 1
+        for date, _, _, _, _, _, _, rs in data_points:
+            # Calculate starting counters for RS
+            if rs is not None:
+                if rs >= 1:
+                    if rs_counter < 0:
+                        break
+                    rs_counter += 1
+                else:
+                    if rs_counter > 0:
+                        break
+                    rs_counter -= 1
 
-#         # Repeat the same structure for EMA50
-#         for date, _, ema50, _, _, close_price,_,_ in data_points:
-#             # Calculate starting counters for EMA50
-#             if close_price > ema50:
-#                 if ema50_counter < 0:
-#                     break
-#                 ema50_counter += 1
-#             elif close_price < ema50:
-#                 if ema50_counter > 0:
-#                     break
-#                 ema50_counter -= 1
+        # Iterate through data points from newest to oldest date for EMA20
+        for date, ema20, _, _, _, close_price, _, _ in data_points:
+            # Calculate starting counters for EMA20
+            if ema20 is not None:
+                if close_price > ema20:
+                    if ema20_counter < 0:
+                        break
+                    ema20_counter += 1
+                elif close_price < ema20:
+                    if ema20_counter > 0:
+                        break
+                    ema20_counter -= 1
 
-#         # Repeat the same structure for EMA100
-#         for date, _, _, ema100, _, close_price,_,_ in data_points:
-#             # Calculate starting counters for EMA100
-#             if close_price > ema100:
-#                 if ema100_counter < 0:
-#                     break
-#                 ema100_counter += 1
-#             elif close_price < ema100:
-#                 if ema100_counter > 0:
-#                     break
-#                 ema100_counter -= 1
+        # Repeat the same structure for EMA50
+        for date, _, ema50, _, _, close_price, _, _ in data_points:
+            # Calculate starting counters for EMA50
+            if ema50 is not None:
+                if close_price > ema50:
+                    if ema50_counter < 0:
+                        break
+                    ema50_counter += 1
+                elif close_price < ema50:
+                    if ema50_counter > 0:
+                        break
+                    ema50_counter -= 1
 
-#         newest_date = None
-#         # Repeat the same structure for EMA200
-#         for date, _, _, _, ema200, close_price,_,_ in data_points:
-#             # Calculate starting counters for EMA200
-#             if close_price > ema200:
-#                 if ema200_counter < 0:
-#                     break
-#                 ema200_counter += 1
-#             elif close_price < ema200:
-#                 if ema200_counter > 0:
-#                     break
-#                 ema200_counter -= 1
-        
+        # Repeat the same structure for EMA100
+        for date, _, _, ema100, _, close_price, _, _ in data_points:
+            # Calculate starting counters for EMA100
+            if ema100 is not None:
+                if close_price > ema100:
+                    if ema100_counter < 0:
+                        break
+                    ema100_counter += 1
+                elif close_price < ema100:
+                    if ema100_counter > 0:
+                        break
+                    ema100_counter -= 1
 
-#          # Store the newest date
-#             if newest_date is None or date > newest_date:
-#                 newest_date = date
+        # Repeat the same structure for EMA200
+        for date, _, _, _, ema200, close_price, _, _ in data_points:
+            # Calculate starting counters for EMA200
+            if ema200 is not None:
+                if close_price > ema200:
+                    if ema200_counter < 0:
+                        break
+                    ema200_counter += 1
+                elif close_price < ema200:
+                    if ema200_counter > 0:
+                        break
+                    ema200_counter -= 1
 
-#         # Create and save only one EmaCounts instance for each stock
-#         name = f"{stock_symbol}_{newest_date}"  # Modify the name-like field
-#         ema_counts_instance, created = EmaCounts.objects.get_or_create(
-#             stock_data=SectorData.objects.get(symbol=stock_symbol, date=newest_date),
-#             defaults={
-#                 'ema20_output': ema20_counter,
-#                 'ema50_output': ema50_counter,
-#                 'ema100_output': ema100_counter,
-#                 'ema200_output': ema200_counter,
-#                 'rsi_output': rsi_counter,
-#                 'rs_output': rs_counter
-#             },
-#         )
+        newest_date = None
+        # Store the newest date
+        for date, _, _, _, _, _, _, _ in data_points:
+            if newest_date is None or date > newest_date:
+                newest_date = date
 
-#         # ema_counts_instance, created = EmaCounts.objects.get_or_create(
-#         #     stock_data=FinancialData.objects.get(symbol=stock_symbol, date=newest_date),
-#         #     defaults={'ema20_output': ema20_counter, 'ema50_output': ema50_counter,
-#         #               'ema100_output': ema100_counter, 'ema200_output': ema200_counter,
-#         #               'rsi_output':rsi_counter,'rs_output':rs_counter
-#         #               },
-#         # )
-#         ema_counts_instance.save()
+        # Create and save only one EmaCounts instance for each stock
+        name = f"{stock_symbol}_{newest_date}"  # Modify the name-like field
+        ema_counts_instance, created = EmaCountsSector.objects.get_or_create(
+            stock_data=SectorData.objects.get(symbol=stock_symbol, date=newest_date),
+            defaults={
+                'ema20_output': ema20_counter,
+                'ema50_output': ema50_counter,
+                'ema100_output': ema100_counter,
+                'ema200_output': ema200_counter,
+                'rsi_output': rsi_counter,
+                'rs_output': rs_counter
+            },
+        )
 
-#         # print(f"Starting ema20_counter for {stock_symbol} = {ema20_counter}")
-#         # print(f"Starting ema50_counter for {stock_symbol} = {ema50_counter}")
-#         # print(f"Starting ema100_counter for {stock_symbol} = {ema100_counter}")
-#         # print(f"Starting ema200_counter for {stock_symbol} = {ema200_counter}")
+        ema_counts_instance.save()
 
-#     # Pass the results to the template
-#     context = {'result_list': []}  # Empty list as no results are being passed to the template
-#     return render(request, 'analyze_output.html', context)
+    # Pass the results to the template
+    context = {'result_list': []}  # Empty list as no results are being passed to the template
+    return render(request, 'analyze_output.html', context)
 
 #### Graph Calculations ########
 

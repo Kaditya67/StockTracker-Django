@@ -24,7 +24,7 @@ urlpatterns = [
     # path('ema_counts/', views.ema_counts, name='ema_counts'),
     # path('count_ema/', views.count_function, name='ema_counts'),
     path('analyze_stocks/', views.analyze_closing_vs_ema, name='analyze_closing_vs_ema'),
-    # path('analyze_sector/', views.analyze_closing_vs_ema_sector, name='analyze_closing_vs_ema_sector'),
+    path('analyze_sector/', views.analyze_closing_vs_ema_sector, name='analyze_closing_vs_ema_sector'),
     # path('graph/', views.graph, name='graph'),
     path('graph/<str:symbol>/<int:ema_value>/', views.graph_partial, name='graph'),
 ]

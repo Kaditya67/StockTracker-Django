@@ -18,8 +18,11 @@ admin.site.register(SectorData)
 
 # admin.site.register(IndicatorValues)
 from .models import EmaCounts
-
 admin.site.register(EmaCounts)
+
+from .models import EmaCountsSector
+admin.site.register(EmaCountsSector)
+
 
 
 # User SignUp

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %} Dashboard {% endblock %}
+
+{% block content %}
+
+<h2>Sectoral Dashboard</h2>
+
+<div class="container mt-5">
+  <div class="card">
+    <div class="card-header">
+      Number of days Indices trending Up or Down
+    </div>
+    <br>
+    <form method="GET" action="{% url 'dashboard' %}">
+      {% if selected_ema == '20' %}
+      <div class="row">
+        {% for sector in sector_data %}
+        {% for ema_count in ema_counts %}
+        {% if sector.symbol == ema_count.stock_data.symbol %}
+        <div class="col-md-3 mb-3">
+          <div class="card {% if ema_count.ema20_output > 0 %}card-positive{% else %}card-negative{% endif %}">
+            <div class="card-body">
+              <h5 class="card-title">{{ sector.symbol }}</h5>
+              <p class="card-text">{{ ema_count.ema20_output }}</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+  
+      {% if selected_ema == '50' %}
+      <div class="row">
+        {% for sector in sector_data %}
+        {% for ema_count in ema_counts %}
+        {% if sector.symbol == ema_count.stock_data.symbol %}
+        <div class="col-md-3 mb-3">
+          <div class="card {% if ema_count.ema50_output > 0 %}card-positive{% else %}card-negative{% endif %}">
+            <div class="card-body">
+              <h5 class="card-title">{{ sector.symbol }}</h5>
+              <p class="card-text">{{ ema_count.ema50_output }}</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if selected_ema == '100' %}
+      <div class="row">
+        {% for sector in sector_data %}
+        {% for ema_count in ema_counts %}
+        {% if sector.symbol == ema_count.stock_data.symbol %}
+        <div class="col-md-3 mb-3">
+          <div class="card {% if ema_count.ema100_output > 0 %}card-positive{% else %}card-negative{% endif %}">
+            <div class="card-body">
+              <h5 class="card-title">{{ sector.symbol }}</h5>
+              <p class="card-text">{{ ema_count.ema100_output }}</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if selected_ema == '200' %}
+      <div class="row">
+        {% for sector in sector_data %}
+        {% for ema_count in ema_counts %}
+        {% if sector.symbol == ema_count.stock_data.symbol %}
+        <div class="col-md-3 mb-3">
+          <div class="card {% if ema_count.ema200_output > 0 %}card-positive{% else %}card-negative{% endif %}">
+            <div class="card-body">
+              <h5 class="card-title">{{ sector.symbol }}</h5>
+              <p class="card-text">{{ ema_count.ema200_output }}</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      <form method="GET" action="{% url 'dashboard' %}">
+        <span class="select">
+          <label for="selected_ema">Select </label>
+          <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#ebf3f3;border-radius:8px;">
+            <option value="20" {% if selected_ema == '20' %}selected{% endif %}>Ema 20</option>
+            <option value="50" {% if selected_ema == '50' %}selected{% endif %}>Ema 50</option>
+            <option value="100" {% if selected_ema == '100' %}selected{% endif %}>Ema 100</option>
+            <option value="200" {% if selected_ema == '200' %}selected{% endif %}>Ema 200</option>
+          </select>
+        </span>
+      </form>
+    </form>
+  </div>
+</div>
+
+<br>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      Number of Days since the Sectors are up or down
+    </div>
+    <br>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <canvas id="sectorChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('sectorChart').getContext('2d');
+    var sectorChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [{% for sector in sector_data %}'{{ sector.symbol }}',{% endfor %}],
+        datasets: [{
+          label: 'RS Output Value',
+          data: [{% for rs_value in rs_values %}{{ rs_value }},{% endfor %}],
+          backgroundColor: [{% for rs_value in rs_values %}{% if rs_value > 0 %}'rgba(0, 255, 0, 0.2)',{% else %}'rgba(255, 0, 0, 0.2)',{% endif %}{% endfor %}],
+          borderColor: [{% for rs_value in rs_values %}{% if rs_value > 0 %}'rgba(0, 255, 0, 1)',{% else %}'rgba(255, 0, 0, 1)',{% endif %}{% endfor %}],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: 'RS Output Value'
+            },
+            ticks: {
+              beginAtZero: true
+            }
+          }],
+          xAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: 'Symbol'
+            }
+          }]
+        }
+      }
+    });
+  });
+</script>
+
+<div class="container mt-3">
+  <div class="card">
+    <div class="card-header">
+      Multiple EMA (Candle closing above EMA) and RSI Data
+    </div>
+    <br>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Sector</th>
+            {% comment %} <th>Close Price</th> {% endcomment %}
+            <th>EMA 20</th>
+            <th>EMA 50</th>
+            <th>EMA 100</th>
+            <th>EMA 200</th>
+            <th>RSI</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sector in sector_data %}
+          <tr>
+            <td>{{ sector.symbol }}</td>
+            {% comment %} <td>{{ sector.close_price }}</td> {% endcomment %}
+            <td style="background-color: {% if sector.ema20 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema20 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
+            <td style="background-color: {% if sector.ema50 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema50 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
+            <td style="background-color: {% if sector.ema100 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema100 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
+            <td style="background-color: {% if sector.ema200 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema200 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
+            <td style="background-color: {% if sector.rsi >= 50 %}green{% else %}red{% endif %}">{% if sector.rsi >= 50 %}Buy{% else %}Sell{% endif %}</td>
+            {% comment %} <td style="background-color: {% if sector.rsi > 50 %}green{% else %}red{% endif %}">{{ sector.rsi }}</td> {% endcomment %}
+        </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

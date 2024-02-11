@@ -1,39 +1,42 @@
 <!DOCTYPE html>
 <html>
   <head>
+    
+    
     <title>{% block title %}My Site{% endblock %}</title>
     <meta charset="UTF-8" />
     <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    name="viewport"
+    content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <link
-      rel="stylesheet"
+    rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-    />
+      />
     <link
-      rel="stylesheet"
+    rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-    />
+      />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
-    />
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <title>Sectors</title>
-    <style>
-      body {
-        font-family: "Arial", sans-serif;
-      }
-
-      body {
-        font-family: "Arial", sans-serif;
-      }
-
-      table {
-        width: 100%;
+      />
+      
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      
+      <title>Sectors</title>
+      
+      <style>
+        body {
+          font-family: "Arial", sans-serif;
+        }
+        
+        body {
+          font-family: "Arial", sans-serif;
+        }
+        
+        table {
+          width: 100%;
         margin-bottom: 1rem;
         color: #212529;
         border-collapse: collapse;
@@ -45,12 +48,12 @@
         text-align: left;
         border-bottom: 1px solid #dee2e6;
       }
-
+      
       th {
         background-color: #343a3f;
         color: #fff;
       }
-
+      
       td {
         background-color: transparent;
       }
@@ -59,19 +62,19 @@
         background-color: #28a745;
         color: #fff;
       }
-
+      
       .sell {
         background-color: #dc3545;
         color: #fff;
       }
-
+      
       @media (max-width: 768px) {
         table {
           overflow-x: auto;
           display: block;
         }
       }
-
+      
       #sidebar {
         height: 100%;
         width: 150px;
@@ -87,7 +90,7 @@
         margin-left: 250px;
         padding: 20px;
       }
-
+      
       @media (max-width: 768px) {
         #sidebar {
           width: 100%;
@@ -126,11 +129,12 @@
         document.querySelectorAll(".nav-item").forEach(function (item) {
           item.classList.remove("active");
         });
-
+        
         // Add 'active' class to the clicked nav item
         element.classList.add("active");
       }
     </script>
+    <link rel="stylesheet" type="text/css" href="./styles.css">
   </head>
   <body>
     <div id="sidebar">

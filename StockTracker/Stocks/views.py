@@ -6,6 +6,101 @@ from django.contrib import messages
 from .models import ContactInformation
 from django.contrib.auth.decorators import login_required
 
+# # def sector_dashboard(request):
+# from django.db.models import Max
+# from django.shortcuts import render
+# from .models import SectorData, EmaCountsSector
+
+# def dashboard(request):
+#     # Get the latest date for each stock
+#     latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
+    
+#     sector_data = []
+#     ema_counts = []
+#     rs_values = []
+#     symbols = []
+#     for stock in latest_dates:
+#         latest_sector_data = SectorData.objects.filter(symbol=stock['symbol'], date=stock['latest_date']).first()
+#         if latest_sector_data:
+#             sector_data.append(latest_sector_data)
+#             ema_count = EmaCountsSector.objects.filter(stock_data=latest_sector_data).first()
+#             if ema_count:
+#                 ema_counts.append(ema_count)
+#                 rs_values.append(ema_count.rs_output)  # Append RS output value
+#                 symbols.append(latest_sector_data.symbol)  # Append symbol
+
+#     # Print out the retrieved RS output values (for debugging)
+#     # Print out the symbol and date of each SectorData object (for debugging)
+#     # Print out all values of each SectorData object (for debugging)
+#     for sector in sector_data:
+#         print(sector.__dict__)
+
+    
+#     selected_ema = request.GET.get('ema', '20')
+    
+#     context = {
+#         'sector_data': sector_data,
+#         'ema_counts': ema_counts,
+#         'rs_values': rs_values,
+#         'symbols': symbols,
+#         'selected_ema': selected_ema,
+#     }
+#     return render(request, 'dashboard.html', context)
+
+
+# def sector_dashboard(request):
+from django.shortcuts import render
+from .models import SectorData, EmaCountsSector
+from django.db.models import Max
+
+def dashboard(request):
+    # Get the latest date for each stock
+    latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
+    
+    sector_data = []
+    ema_counts = []
+    rs_values = []
+    symbols = []
+    for stock in latest_dates:
+        latest_sector_data = SectorData.objects.filter(symbol=stock['symbol'], date=stock['latest_date']).first()
+        if latest_sector_data:
+            sector_data.append(latest_sector_data)
+            ema_count = EmaCountsSector.objects.filter(stock_data=latest_sector_data).first()
+            if ema_count:
+                ema_counts.append(ema_count)
+                rs_values.append(ema_count.rs_output)
+                symbols.append(latest_sector_data.symbol)
+
+    selected_ema = request.GET.get('ema', '20')
+    
+    context = {
+        'sector_data': sector_data,
+        'ema_counts': ema_counts,
+        'rs_values': rs_values,
+        'symbols': symbols,
+        'selected_ema': selected_ema,
+    }
+    return render(request, 'dashboard.html', context)
+
+
+def symbols_and_ema_counts(request):
+    # Retrieve the latest record for each stock symbol
+    latest_entries = FinancialData.objects.values('symbol').annotate(
+        latest_date=Max('date')
+    )
+
+    # Retrieve the EMA counts for each latest entry
+    symbols_and_ema_counts = [
+        {
+            'symbol': entry['symbol'],
+            'ema20_count': EmaCounts.objects.filter(stock_data__symbol=entry['symbol'], stock_data__date=entry['latest_date']).values_list('ema20_output', flat=True).first()
+        }
+        for entry in latest_entries
+    ]
+
+    # Pass the data to the template
+    return render(request, 'symbols_and_ema_counts.html', {'symbols_and_ema_counts': symbols_and_ema_counts})
+
 def index(request):
         
     if request.method == 'POST':
@@ -71,6 +166,12 @@ def sectors(request):
 def portfolio(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'portfolio.html',{'current_path': current_path})
+def home_temp(request):
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'home_template.html',{'current_path': current_path})
+def stock_temp(request):
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'stock_template.html',{'current_path': current_path})
 
 @login_required
 def closed_positions(request):

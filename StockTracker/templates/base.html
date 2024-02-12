@@ -1,59 +1,57 @@
 <!DOCTYPE html>
 <html>
   <head>
-    
-    
     <title>{% block title %}My Site{% endblock %}</title>
     <meta charset="UTF-8" />
     <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, shrink-to-fit=no"
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <link
-    rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-      />
-    <link
-    rel="stylesheet"
+      rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-      />
+    />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
-      />
-      
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-      
-      <title>Sectors</title>
-      
-      <style>
-        body {
-          font-family: "Arial", sans-serif;
-        }
-        
-        body {
-          font-family: "Arial", sans-serif;
-        }
-        
-        table {
-          width: 100%;
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="./styles.css" />
+    <style>
+      #toggleButton {
+        position: absolute;
+        left: 148px; /* Adjust the value based on the sidebar width */
+        top: 5px; /* Adjust the value based on the desired vertical position */
+        border-radius: 0rem;
+      }
+
+      #toggleButton i {
+        display: inline-block; /* Ensure the icon is displayed */
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+      }
+
+      table {
+        width: 100%;
         margin-bottom: 1rem;
         color: #212529;
         border-collapse: collapse;
         border-spacing: 0;
       }
+
       th,
       td {
         padding: 0.75rem;
         text-align: left;
         border-bottom: 1px solid #dee2e6;
       }
-      
+
       th {
         background-color: #343a3f;
         color: #fff;
       }
-      
+
       td {
         background-color: transparent;
       }
@@ -62,19 +60,19 @@
         background-color: #28a745;
         color: #fff;
       }
-      
+
       .sell {
         background-color: #dc3545;
         color: #fff;
       }
-      
+
       @media (max-width: 768px) {
         table {
           overflow-x: auto;
           display: block;
         }
       }
-      
+
       #sidebar {
         height: 100%;
         width: 150px;
@@ -84,153 +82,222 @@
         left: 0;
         background-color: #343a40;
         padding-top: 20px;
+        transition: width 0.3s ease;
+      }
+
+      #sidebar.collapsed {
+        width: 58px;
+      }
+
+      #sidebar.collapsed .navbar-brand {
+        display: none;
+      }
+
+      #sidebar.collapsed .nav-text {
+        display: none;
+      }
+
+      #sidebar.collapsed .nav-item {
+        text-align: center;
       }
 
       #content {
         margin-left: 250px;
         padding: 20px;
+        transition: margin-left 0.3s ease;
       }
-      
+
+      #content.collapsed {
+        margin-left: 70px;
+      }
+
       @media (max-width: 768px) {
         #sidebar {
-          width: 100%;
-          height: auto;
-          position: relative;
+          width: 0;
         }
 
         #content {
           margin-left: 0;
         }
       }
+
       .card-positive {
         border-left: 5px solid green;
       }
+
       .card-negative {
         border-left: 5px solid red;
       }
+
       #navbarToggle li {
         background-color: #343a40;
       }
+
       #navbarToggle li.active {
         background-color: #808080;
         /* Add any other styles for the active state */
       }
 
       .nav-item.active {
-        background-color: #ffc0cb; /* Add your desired color */
-        color: #f00; /* Add your desired text color */
+        background-color: #ffc0cb;
+        /* Add your desired color */
+        color: #f00;
+        /* Add your desired text color */
         /* Add any other styles for the active state */
       }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0"></script>
-    <script>
-      function changeColor(element) {
-        // Remove 'active' class from all nav items
-        document.querySelectorAll(".nav-item").forEach(function (item) {
-          item.classList.remove("active");
-        });
-        
-        // Add 'active' class to the clicked nav item
-        element.classList.add("active");
+
+      .logout-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        width: 150px; /* Set the initial width */
       }
-    </script>
-    <link rel="stylesheet" type="text/css" href="./styles.css">
+
+      .logout-button.collapsed {
+        width: 58px; /* Adjust width when collapsed */
+      }
+
+      .logout-button:hover {
+        background-color: transparent;
+      }
+
+      .logout-icon {
+        color: #fff;
+        font-size: 24px;
+      }
+
+      /* Light mode styles */
+      body {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+
+      /* Dark mode styles */
+      body.dark-mode {
+        background-color: #343a40;
+        color: #fff;
+      }
+    </style>
   </head>
   <body>
     <div id="sidebar">
-      <div id="sidebar">
-        <nav class="navbar navbar-dark">
-          <a class="navbar-brand" href="#">StockTrack</a>
-        </nav>
-        <div class="collapse show" id="navbarToggle">
-          <ul class="nav flex-column">
-            <!-- Home -->
-            <li
-              class="nav-item {% if current_path == 'home' %}active{% endif %}"
+      <nav class="navbar navbar-dark">
+        <a class="navbar-brand" href="#">StockTrack</a>
+      </nav>
+      <br>
+      <!-- Toggle button -->
+      <button
+        onclick="toggleSidebar()"
+        class="btn btn-primary"
+        id="toggleButton"
+        style="background-color: #695cfe"
+      >
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <div class="collapse show" id="navbarToggle">
+        <ul class="nav flex-column">
+          <!-- Home -->
+          <li
+            class="nav-item {% if current_path == 'dashboard' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'dashboard' %}">
+              <i class="fas fa-home"></i>
+              <span class="nav-text">Home</span>
+            </a>
+          </li>
+
+          <!-- Portfolio -->
+          <li
+            class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'portfolio' %}">
+              <i class="fas fa-briefcase"></i>
+              <span class="nav-text">Portfolio</span>
+            </a>
+          </li>
+
+          <!-- Sectors -->
+          <li
+            class="nav-item {% if current_path == 'sectors' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'sectors' %}">
+              <i class="fas fa-building"></i>
+              <span class="nav-text">Sectors</span>
+            </a>
+          </li>
+
+          <!-- Stocks -->
+          <li
+            class="nav-item {% if current_path == 'stocks' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'stocks' %}">
+              <i class="fas fa-building"></i>
+              <span class="nav-text">Stocks</span>
+            </a>
+          </li>
+
+          <!-- Settings -->
+          <li
+            class="nav-item {% if current_path == 'settings' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'settings' %}">
+              <i class="fas fa-bars"></i>
+              <span class="nav-text">Settings</span>
+            </a>
+          </li>
+
+          <!-- Help -->
+          <li class="nav-item {% if current_path == 'help' %}active{% endif %}">
+            <a class="nav-link text-light" href="{% url 'help' %}">
+              <i class="fas fa-book"></i>
+              <span class="nav-text">Help</span>
+            </a>
+          </li>
+
+          <!-- About Us -->
+          <li
+            class="nav-item {% if current_path == 'about' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'about' %}">
+              <i class="fas fa-paper-plane"></i>
+              <span class="nav-text">About Us</span>
+            </a>
+          </li>
+
+          <!-- Performance tab -->
+          <li
+            class="nav-item {% if current_path == 'graph'%}active{% endif %}"
+          >
+            <a
+              class="nav-link text-light"
+              href="{% url 'graph' symbol='TATAMOTORS.NS' ema_value=20 %}"
             >
-              <a class="nav-link text-light" href="{% url 'home' %}">
-                <i class="fas fa-home"></i> Home
-              </a>
-            </li>
-
-            <!-- Portfolio -->
-            <li
-              class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'portfolio' %}">
-                <i class="fas fa-briefcase"></i> Portfolio
-              </a>
-            </li>
-
-            <!-- Sectors -->
-            <li
-              class="nav-item {% if current_path == 'sectors' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'sectors' %}">
-                <i class="fas fa-building"></i> Sectors
-              </a>
-            </li>
-
-            <!-- Stocks -->
-            <li
-              class="nav-item {% if current_path == 'stocks' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'stocks' %}">
-                <i class="fas fa-building"></i> Stocks
-              </a>
-            </li>
-
-            <!-- Settings -->
-            <li
-              class="nav-item {% if current_path == 'settings' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'settings' %}">
-                <i class="fas fa-bars"></i> Settings
-              </a>
-            </li>
-
-            <!-- Help -->
-            <li
-              class="nav-item {% if current_path == 'help' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'help' %}">
-                <i class="fas fa-book"></i> Help
-              </a>
-            </li>
-
-            <!-- About Us -->
-            <li
-              class="nav-item {% if current_path == 'about' %}active{% endif %}"
-            >
-              <a class="nav-link text-light" href="{% url 'about' %}">
-                <i class="fas fa-paper-plane"></i> About Us
-              </a>
-            </li>
-
-            <li
-              class="nav-item {% if current_path == 'graph' and stock_name == 'TATAMOTORS.NS' and ema_value == 20 %}active{% endif %}"
-            >
-              <a
-                class="nav-link text-light"
-                href="{% url 'graph' symbol='TATAMOTORS.NS' ema_value=20 %}"
-              >
-
-                <i class="fa fa-line-chart" style="color: #ffffff"></i>
-                Performance
-              </a>
-            </li>
-
-            <br />
+              <i class="fas fa-plane"></i>
+              <span class="nav-text">Performance</span>
+            </a>
+          </li>
+          <br> 
+          <!-- Logout -->
+          <li class="nav-item">
             <button
               type="button"
               onclick="confirmLogout()"
-              class="btn btn-danger"
+              class="logout-button nav-link text-light"
+              style="background-color: #695cfe"
             >
-              Logout
+              <i class="fas fa-sign-out-alt logout-icon"></i>
+              <span class="nav-text">Logout</span>
             </button>
-          </ul>
-        </div>
+          </li>
+        </ul>
       </div>
+      <br>
+
+      <!-- Button for switching between light and dark mode -->
+      {% comment %} <button onclick="toggleDarkMode()" class="btn btn-primary" style="background-color: #695cfe; margin-top: auto;">
+        <i class="fas fa-adjust"></i> Switch Mode
+      </button> {% endcomment %}
     </div>
 
     <div id="content">
@@ -283,45 +350,58 @@
         </div>
       </div>
     </div>
+
     <script>
-      {% comment %} function confirmLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-          window.location.href = "{% url 'logout' %}?next={% url 'index' %}";
+      function toggleSidebar() {
+        var sidebar = document.getElementById("sidebar");
+        var content = document.getElementById("content");
+        var toggleButton = document.getElementById("toggleButton");
+
+        sidebar.classList.toggle("collapsed");
+        content.classList.toggle("collapsed");
+
+        if (sidebar.classList.contains("collapsed")) {
+          toggleButton.style.left = "5px"; // Adjust the value to position it outside the collapsed sidebar
+          toggleButton.style.top = "5px"; // Adjust the value to position it outside the collapsed sidebar
+           // Adjust the value to position it outside the collapsed sidebar
+          document
+            .querySelectorAll(".logout-button")
+            .forEach(function (button) {
+              button.classList.add("collapsed");
+            });
+        } else {
+          toggleButton.style.left = "148px"; // Adjust the value based on the expanded sidebar width
+          document
+            .querySelectorAll(".logout-button")
+            .forEach(function (button) {
+              button.classList.remove("collapsed");
+            });
         }
-      } {% endcomment %}
+      }
+
+      function toggleDarkMode() {
+        var body = document.body;
+        body.classList.toggle("dark-mode");
+
+        // Save the user's preference to local storage
+        var isDarkMode = body.classList.contains("dark-mode");
+        localStorage.setItem("darkMode", isDarkMode);
+      }
+
+      function setInitialMode() {
+        var body = document.body;
+        var isDarkMode = localStorage.getItem("darkMode");
+
+        if (isDarkMode === "true") {
+          body.classList.add("dark-mode");
+        }
+      }
+
+      window.onload = setInitialMode;
     </script>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-
-    <script>
-      function changeColor(clickedElement) {
-        // Remove 'active' class from all nav items
-        document.querySelectorAll(".nav-item").forEach(function (item) {
-          item.classList.remove("active");
-        });
-
-        // Add 'active' class to the clicked nav item
-        clickedElement.classList.add("active");
-      }
-
-      // Get the current URL
-      var currentUrl = window.location.href;
-
-      // Extract the path after the port
-      var pathAfterPort = window.location.pathname;
-
-      // Remove leading and trailing slashes from the path
-      var cleanPath = pathAfterPort.replace(/^\/|\/$/g, "");
-
-      // Find the corresponding sidebar item and change its color
-      var sidebarItem = document.querySelector(
-        '.nav-item[data-path="' + cleanPath + '"]'
-      );
-      if (sidebarItem) {
-        changeColor(sidebarItem);
-      }
-    </script>
   </body>
 </html>

@@ -72,6 +72,7 @@ def dashboard(request):
                 symbols.append(latest_sector_data.symbol)
 
     selected_ema = request.GET.get('ema', '20')
+    current_path = resolve(request.path_info).url_name
     
     context = {
         'sector_data': sector_data,
@@ -79,7 +80,10 @@ def dashboard(request):
         'rs_values': rs_values,
         'symbols': symbols,
         'selected_ema': selected_ema,
+        'current_path': current_path,
     }
+    # current_path = resolve(request.path_info).url_name
+    # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
 
 
@@ -538,6 +542,26 @@ from Stocks.models import FinancialData, EmaCounts,SectorData
 from datetime import timedelta
 from django.utils import timezone
 
+def home(request):
+    # Fetch distinct stock symbols from the database
+    stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+
+    # Fetch the latest EMA values for each EMA period
+    ema20_values = FinancialData.objects.values_list('ema20', flat=True).order_by('-date')[:1]
+    ema50_values = FinancialData.objects.values_list('ema50', flat=True).order_by('-date')[:1]
+    ema100_values = FinancialData.objects.values_list('ema100', flat=True).order_by('-date')[:1]
+    ema200_values = FinancialData.objects.values_list('ema200', flat=True).order_by('-date')[:1]
+
+    context = {
+        'stock_symbols': stock_symbols,
+        'ema20_values': ema20_values,
+        'ema50_values': ema50_values,
+        'ema100_values': ema100_values,
+        'ema200_values': ema200_values,
+    }
+
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'home.html', {'current_path': current_path, 'context': context})
 def analyze_closing_vs_ema(request):
     """
     This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
@@ -877,10 +901,13 @@ def graph_partial(request, symbol, ema_value):
         stock = FinancialData.objects.values_list('symbol', flat=True).distinct()
         current_path = resolve(request.path_info).url_name
         # Render the graph as HTML
+        current_path = resolve(request.path_info).url_name
+
         context = {
             'selected_symbol': symbol,
             'img_base64': img_base64,
-            'stock': stock
+            'stock': stock,
+            'current_path': current_path,
         }
         return render(request, 'graph_partial.html', context)
 
@@ -921,26 +948,6 @@ from django.shortcuts import render
 from django.urls import resolve
 from .models import FinancialData
 
-def home(request):
-    # Fetch distinct stock symbols from the database
-    stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
-
-    # Fetch the latest EMA values for each EMA period
-    ema20_values = FinancialData.objects.values_list('ema20', flat=True).order_by('-date')[:1]
-    ema50_values = FinancialData.objects.values_list('ema50', flat=True).order_by('-date')[:1]
-    ema100_values = FinancialData.objects.values_list('ema100', flat=True).order_by('-date')[:1]
-    ema200_values = FinancialData.objects.values_list('ema200', flat=True).order_by('-date')[:1]
-
-    context = {
-        'stock_symbols': stock_symbols,
-        'ema20_values': ema20_values,
-        'ema50_values': ema50_values,
-        'ema100_values': ema100_values,
-        'ema200_values': ema200_values,
-    }
-
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'home.html', {'current_path': current_path, 'context': context})
 
 
 ################################ Comments ####################################################

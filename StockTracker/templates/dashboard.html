@@ -88,9 +88,9 @@
       </div>
       {% endif %}
       <form method="GET" action="{% url 'dashboard' %}">
-        <span class="select">
+        <span class="select" style="border:2px solid #6c757d;background:#6c757d;color:white;padding:2px;border-radius:8px">
           <label for="selected_ema">Select </label>
-          <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#ebf3f3;border-radius:8px;">
+          <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#6c757d;border-radius:8px;color:white">
             <option value="20" {% if selected_ema == '20' %}selected{% endif %}>Ema 20</option>
             <option value="50" {% if selected_ema == '50' %}selected{% endif %}>Ema 50</option>
             <option value="100" {% if selected_ema == '100' %}selected{% endif %}>Ema 100</option>
@@ -158,6 +158,21 @@
   });
 </script>
 
+<!-- Include the DataTables CSS file -->
+<link rel="stylesheet" href="//cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Include the DataTables JavaScript file -->
+<script src="//cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // Initialize the DataTable
+    $('#interactive-table').DataTable();
+  });
+</script>
 <div class="container mt-3">
   <div class="card">
     <div class="card-header">
@@ -165,34 +180,34 @@
     </div>
     <br>
     <div class="table-responsive">
-      <table class="table">
+      <table class="table table-bordered table-striped" id="interactive-table">
         <thead>
           <tr>
-            <th>Sector</th>
-            {% comment %} <th>Close Price</th> {% endcomment %}
-            <th>EMA 20</th>
-            <th>EMA 50</th>
-            <th>EMA 100</th>
-            <th>EMA 200</th>
-            <th>RSI</th>
+            <th style="width: 16.66%;">Sector</th>
+            <th style="width: 16.66%;">EMA 20</th>
+            <th style="width: 16.66%;">EMA 50</th>
+            <th style="width: 16.66%;">EMA 100</th>
+            <th style="width: 16.66%;">EMA 200</th>
+            <th style="width: 16.66%;">RSI</th>
           </tr>
         </thead>
         <tbody>
           {% for sector in sector_data %}
           <tr>
             <td>{{ sector.symbol }}</td>
-            {% comment %} <td>{{ sector.close_price }}</td> {% endcomment %}
-            <td style="background-color: {% if sector.ema20 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema20 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
-            <td style="background-color: {% if sector.ema50 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema50 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
-            <td style="background-color: {% if sector.ema100 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema100 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
-            <td style="background-color: {% if sector.ema200 > sector.close_price %}green{% else %}red{% endif %}">{% if sector.ema200 > sector.close_price %}Buy{% else %}Sell{% endif %}</td>
-            <td style="background-color: {% if sector.rsi >= 50 %}green{% else %}red{% endif %}">{% if sector.rsi >= 50 %}Buy{% else %}Sell{% endif %}</td>
-            {% comment %} <td style="background-color: {% if sector.rsi > 50 %}green{% else %}red{% endif %}">{{ sector.rsi }}</td> {% endcomment %}
-        </tr>
+            <td style="text-align: center; font-weight: bold; padding: 8px; color: {% if sector.ema20 > sector.close_price %}#155724{% else %}#721c24{% endif %}; background-color: {% if sector.ema20 > sector.close_price %}#dff0d8{% else %}#f8d7da{% endif %};">{% if sector.ema20 > sector.close_price %}<span style="color: #155724;">Buy &#8593;</span>{% else %}<span style="color: #721c24;">Sell &#8595;</span>{% endif %}</td>
+            <td style="text-align: center; font-weight: bold; padding: 8px; color: {% if sector.ema50 > sector.close_price %}#155724{% else %}#721c24{% endif %}; background-color: {% if sector.ema50 > sector.close_price %}#dff0d8{% else %}#f8d7da{% endif %};">{% if sector.ema50 > sector.close_price %}<span style="color: #155724;">Buy &#8593;</span>{% else %}<span style="color: #721c24;">Sell &#8595;</span>{% endif %}</td>
+            <td style="text-align: center; font-weight: bold; padding: 8px; color: {% if sector.ema100 > sector.close_price %}#155724{% else %}#721c24{% endif %}; background-color: {% if sector.ema100 > sector.close_price %}#dff0d8{% else %}#f8d7da{% endif %};">{% if sector.ema100 > sector.close_price %}<span style="color: #155724;">Buy &#8593;</span>{% else %}<span style="color: #721c24;">Sell &#8595;</span>{% endif %}</td>
+            <td style="text-align: center; font-weight: bold; padding: 8px; color: {% if sector.ema200 > sector.close_price %}#155724{% else %}#721c24{% endif %}; background-color: {% if sector.ema200 > sector.close_price %}#dff0d8{% else %}#f8d7da{% endif %};">{% if sector.ema200 > sector.close_price %}<span style="color: #155724;">Buy &#8593;</span>{% else %}<span style="color: #721c24;">Sell &#8595;</span>{% endif %}</td>
+            <td style="text-align: center; font-weight: bold; padding: 8px; color: {% if sector.rsi >= 50 %}#155724{% else %}#721c24{% endif %}; background-color: {% if sector.rsi >= 50 %}#dff0d8{% else %}#f8d7da{% endif %};">{% if sector.rsi >= 50 %}<span style="color: #155724;">Buy &#8593;</span>{% else %}<span style="color: #721c24;">Sell &#8595;</span>{% endif %}</td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 </div>
+
+
+
 {% endblock %}

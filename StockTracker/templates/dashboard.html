@@ -88,8 +88,8 @@
       </div>
       {% endif %}
       <form method="GET" action="{% url 'dashboard' %}">
-        <span class="select" style="border:2px solid #6c757d;background:#6c757d;color:white;padding:2px;border-radius:8px">
-          <label for="selected_ema">Select </label>
+        <span class="select" style="border:2px solid #6c757d;background:#6c757d;color:white;padding:7px;border-radius:8px">
+          <label for="selected_ema"></label>
           <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#6c757d;border-radius:8px;color:white">
             <option value="20" {% if selected_ema == '20' %}selected{% endif %}>Ema 20</option>
             <option value="50" {% if selected_ema == '50' %}selected{% endif %}>Ema 50</option>
@@ -104,6 +104,7 @@
 
 <br>
 <div class="container">
+  <div class="graph-container">
   <div class="card">
     <div class="card-header">
       Number of Days since the Sectors are up or down

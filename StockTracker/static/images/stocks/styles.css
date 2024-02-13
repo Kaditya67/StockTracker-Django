@@ -11,12 +11,8 @@ body
 
 
 @import url(//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css);
-}
-@import url(https://fonts.googleapis.com/css?family=Titillium+Web:300);
 
-.logo{
-  
-}
+@import url(https://fonts.googleapis.com/css?family=Titillium+Web:300);
 
 .settings {
   
@@ -117,7 +113,7 @@ width:55px;
 overflow:hidden;
 -webkit-transition:width .2s linear;
 transition:width .2s linear;
--webkit-transform:translateZ(0) scale(1,1);
+/* -webkit-transform:translateZ(0) scale(1,1); */
 box-shadow: 1px 0 15px rgba(0, 0, 0, 0.07);
   opacity:1;
 }
@@ -176,10 +172,6 @@ vertical-align:middle;
 width:190px;
 font-family: 'Titillium Web', sans-serif;
 }
-
-.main-menu .share {
-}
-
 
 
 .main-menu .fb-like {

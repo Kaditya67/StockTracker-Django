@@ -82,6 +82,7 @@ def dashboard(request):
         'selected_ema': selected_ema,
         'current_path': current_path,
     }
+    
     # current_path = resolve(request.path_info).url_name
     # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
@@ -154,10 +155,114 @@ def forgetpassword(request):
 #     return render(request,'home.html')
 
 
+from datetime import timedelta
+from django.utils import timezone
+from django.shortcuts import render
+from .models import FinancialData, EmaCounts
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
+
 @login_required
 def stocks(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'stocks.html', {'current_path': current_path})
+    # logger.debug("Entering stocks view function")
+
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    # logger.debug(f"Unique symbols: {unique_symbols}")
+
+    unique_symbols = unique_symbols[:20]
+
+    result = []
+    for stock_symbol in unique_symbols:
+        current_date = timezone.now().date()
+        start_date = current_date - timedelta(days=200)
+
+        data_points = FinancialData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('-date').values_list('date', 'ema20', 'close_price')
+
+        # logger.debug(f"Data points for {stock_symbol}: {data_points}")
+
+        if not data_points:
+            # logger.debug(f"No data points found for {stock_symbol}")
+            continue
+
+        ema20_counter = 0
+        for date, ema20, close_price in data_points:
+            if ema20 is None:
+                continue
+            if close_price > ema20:
+                if ema20_counter < 0:
+                    break
+                ema20_counter += 1
+                result.append((date, ema20_counter))
+                # logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
+            elif close_price < ema20:
+                if ema20_counter > 0:
+                    break
+                ema20_counter -= 1
+                result.append((date, ema20_counter))
+                logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
+
+    logger.debug(f"Result: {result}")
+
+    context = {
+        'result': result
+    }
+    print(result)
+    logger.debug("Rendering stocks.html template with context")
+    return render(request, 'stocks.html', context)
+
+
+# def stocks(request):
+    # # Get the distinct stock symbols
+    # stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    
+    # # Get the selected stock symbol from the query parameter
+    # symbol = request.GET.get('symbol')
+    
+    # # Initialize variables to store closing prices and calculate EMA20
+    # closing_prices = []
+    # ema20_values = []
+    
+    # if symbol:
+    #     # Get the current date
+    #     current_date = timezone.now().date()
+        
+    #     # Calculate the date 20 days ago
+    #     start_date = current_date - timedelta(days=20)
+        
+    #     # Query financial data for the selected stock and date range
+    #     financial_data = FinancialData.objects.filter(symbol=symbol, date__range=[start_date, current_date]).order_by('date')
+        
+    #     # Calculate EMA20 for the past 20 days
+    #     k = 2 / (20 + 1)  # EMA smoothing factor
+    #     for data_point in financial_data:
+    #         closing_prices.append(data_point.close_price)
+    #         if len(closing_prices) == 1:
+    #             ema20 = data_point.close_price
+    #         else:
+    #             ema20 = (data_point.close_price - ema20_values[-1]) * k + ema20_values[-1]
+    #         ema20_values.append(ema20)
+        
+    #     # Save the EMA20 count to the database
+    #     ema20_count = sum(1 for price in closing_prices[-20:] if price > ema20_values[-1])
+    #     ema_counts_instance, created = EmaCounts.objects.get_or_create(
+    #         stock_data=financial_data.last(),
+    #         defaults={'ema20_output': ema20_count}
+    #     )
+    # else:
+    #     financial_data = None
+    #     ema20_count = None
+    
+    # current_path = resolve(request.path_info).url_name
+
+    # return render(request, 'stocks.html', {'current_path': current_path, 'stock_symbols': stock_symbols, 'financial_data': financial_data, 'ema20_values': ema20_values, 'ema20_count': ema20_count})
 
 
 @login_required

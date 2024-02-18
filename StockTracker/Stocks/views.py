@@ -82,6 +82,7 @@ def dashboard(request):
         'selected_ema': selected_ema,
         'current_path': current_path,
     }
+    
     # current_path = resolve(request.path_info).url_name
     # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
@@ -286,9 +287,58 @@ def portfolio(request):
 def home_temp(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'home_template.html',{'current_path': current_path})
+import logging
+from datetime import timedelta
+from django.shortcuts import render
+from django.utils import timezone
+from django.urls import resolve
+from .models import FinancialData
+
+logger = logging.getLogger(__name__)
+
 def stock_temp(request):
+    logger.debug("Os Errors come to me")
+
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols = unique_symbols[:20]
+
+    result = []
+    for stock_symbol in unique_symbols:
+        current_date = timezone.now().date()
+        start_date = current_date - timedelta(days=200)
+
+        data_points = FinancialData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('-date').values_list('date', 'ema20', 'close_price')
+
+        if not data_points:
+            continue
+
+        ema20_counter = 0
+        for date, ema20, close_price in data_points:
+            if ema20 is None:
+                continue
+            if close_price > ema20:
+                if ema20_counter < 0:
+                    break
+                ema20_counter += 1
+                result.append((date, ema20_counter))
+            elif close_price < ema20:
+                if ema20_counter > 0:
+                    break
+                ema20_counter -= 1
+                result.append((date, ema20_counter))
+
+    logger.debug(f"Result: {result}")
+
+    context = {
+        'result': result
+    }
+    logger.debug("Rendering stock_template.html template with context")
     current_path = resolve(request.path_info).url_name
-    return render(request, 'stock_template.html',{'current_path': current_path})
+    return render(request, 'stock_template.html', context)
+
 
 @login_required
 def closed_positions(request):

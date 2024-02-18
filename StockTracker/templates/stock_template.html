@@ -110,4 +110,16 @@
         </tbody>
       </table>
     </div>
+    <h1>
+      Stocks Available
+    </h1>
+    <div class="results-container">
+      {% for res in result %}
+          <div class="result-item"> 
+              <h2>Date: {{ res.0 }}</h2>
+              <h2>EMA20 Counter: {{ res.1 }}</h2>
+          </div>
+      {% endfor %}
+  </div>  
+  
 {% endblock %}

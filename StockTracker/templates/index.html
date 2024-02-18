@@ -29,13 +29,13 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
-            <a class="nav-link" href="#features">Features</a>
+            <a class="nav-link" href="#features"><h6>Features</h6></a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#pricing">Pricing</a>
+            <a class="nav-link" href="#pricing"><h6>Pricing</h6></a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#contact">Contact</a>
+            <a class="nav-link" href="#contact"><h6>Contact</h6></a>
           </li>
         </ul>
       </div>
@@ -45,11 +45,13 @@
   <!-- Hero Section -->
   <header class="hero bg-primary text-white text-center py-5">
     <div class="container">
-      <h1 class="display-4">Track Your Stocks Like a Pro</h1>
-      <p class="lead">Stay informed about your investments with real-time data and advanced analytics.</p>
-      <a href="{% url 'signup' %}" class="btn btn-light btn-lg">Get Started</a>
+        <h1 class="display-4">Track Your Stocks Like a Pro</h1>
+        <p class="lead">Stay informed about your investments with real-time data and advanced analytics.</p>
+        <a href="{% url 'subscription' %}" class="btn btn-light btn-lg black-border" style="color: white; background-color: red;"><h6>Subscription</h6></a>
+        <a href="{% url 'signup' %}" class="btn btn-light btn-lg black-border" style="color: white;background-color: #212529; margin-left: 30px "><h6>Free Demo ></h6></a>
     </div>
-  </header>
+</header>
+
 
   <!-- Features Section -->
 <section id="features" class="py-5">

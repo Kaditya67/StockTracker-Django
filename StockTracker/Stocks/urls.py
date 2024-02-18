@@ -4,6 +4,9 @@ from . import views
 urlpatterns = [
     path('',views.index,name="index"),
     path('login/',views.user_login,name="user_login"),
+    path('logout/',views.user_logout,name="user_logout"),
+    path('verify/',views.verify,name="verify"),
+    path('subscription/', views.subscription, name='subscription'),
     # path('your-view/', your_view, name='your_view'),
     path('signup/',views.signup,name="signup"),
     path('forgotpassword/',views.forgetpassword,name="forgetpassword"),
@@ -27,6 +30,13 @@ urlpatterns = [
     path('analyze_sector/', views.analyze_closing_vs_ema_sector, name='analyze_closing_vs_ema_sector'),
     # path('graph/', views.graph, name='graph'),
     path('graph/<str:symbol>/<int:ema_value>/', views.graph_partial, name='graph'),
+    path('symbols/', views.symbols_and_ema_counts, name='symbols_and_closing_prices'),
+    # path('dashboard/', views.sectoral_dashboard, name='sectoral_dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),  # URL for the sectoral dashboard
+    path('dashboard/<int:ema>/', views.dashboard, name='dashboard_with_ema'),  # URL for the sectoral dashboard with selected EMA
+    # path('logout/', views.logout_view, name='logout'),
+    path('home_template/', views.home_temp, name='home_template'),
+    path('stock_template/', views.stock_temp, name='stock_template'),
 ]
     # path('graph/<str:symbol>/<int:ema_value>/', views.graph, name='graph'),
 

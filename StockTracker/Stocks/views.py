@@ -6,6 +6,95 @@ from django.contrib import messages
 from .models import ContactInformation
 from django.contrib.auth.decorators import login_required
 
+# def sector_dashboard(request):
+from django.shortcuts import render
+from .models import SectorData, EmaCountsSector
+from django.db.models import Max
+import http
+
+from django.contrib.auth import login, authenticate
+from django.core.mail import send_mail
+
+from .forms import SignUpForm
+from django.shortcuts import render, redirect, HttpResponse
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib import messages
+from .models import ContactInformation
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.conf import settings
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import random
+import string
+from django.urls import reverse
+from .email_alerts import email_alert
+from .utils import generate_otp
+
+def dashboard(request):
+    """
+    A view function to render the dashboard page with the latest data for each stock.
+    Takes a request object and returns an HTML response with the dashboard template.
+    """
+    # Get the latest date for each stock
+    latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
+    
+    sector_data = []
+    ema_counts = []
+    rs_values = []
+    symbols = []
+    for stock in latest_dates:
+        latest_sector_data = SectorData.objects.filter(symbol=stock['symbol'], date=stock['latest_date']).first()
+        if latest_sector_data:
+            sector_data.append(latest_sector_data)
+            ema_count = EmaCountsSector.objects.filter(stock_data=latest_sector_data).first()
+            if ema_count:
+                ema_counts.append(ema_count)
+                rs_values.append(ema_count.rs_output)
+                symbols.append(latest_sector_data.symbol)
+
+    selected_ema = request.GET.get('ema', '20')
+    current_path = resolve(request.path_info).url_name
+    
+    context = {
+        'sector_data': sector_data,
+        'ema_counts': ema_counts,
+        'rs_values': rs_values,
+        'symbols': symbols,
+        'selected_ema': selected_ema,
+        'current_path': current_path,
+    }
+
+    # current_path = resolve(request.path_info).url_name
+    # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
+    return render(request, 'dashboard.html', context)
+
+
+def symbols_and_ema_counts(request):
+    """
+    Retrieve the latest record for each stock symbol.
+    Retrieve the EMA counts for each latest entry.
+    Pass the data to the template.
+    """
+    # Retrieve the latest record for each stock symbol
+    latest_entries = FinancialData.objects.values('symbol').annotate(
+        latest_date=Max('date')
+    )
+
+    # Retrieve the EMA counts for each latest entry
+    symbols_and_ema_counts = [
+        {
+            'symbol': entry['symbol'],
+            'ema20_count': EmaCounts.objects.filter(stock_data__symbol=entry['symbol'], stock_data__date=entry['latest_date']).values_list('ema20_output', flat=True).first()
+        }
+        for entry in latest_entries
+    ]
+
+    # Pass the data to the template
+    return render(request, 'symbols_and_ema_counts.html', {'symbols_and_ema_counts': symbols_and_ema_counts})
+
 def index(request):
         
     if request.method == 'POST':
@@ -17,35 +106,95 @@ def index(request):
         messages.success(request,"Contact Form Submitted !")
 
     return render(request,'index.html')
+
+def subscription(request):
+    return render(request, 'subscription.html')
+
+def verify(request):
+    if request.method == 'POST':
+        print('Form submitted via POST request')
+        user_entered_otp = request.POST.get('otp')
+        otp_sent_to_email = request.session.get('otp_sent_to_email')
+        print('User-entered OTP:', user_entered_otp)
+        print('OTP sent to email:', otp_sent_to_email)
+
+        if user_entered_otp == otp_sent_to_email:
+            # OTP is correct, perform further actions
+            # For example, mark the user as verified
+            return redirect('user_login')
+        else:
+            # OTP is incorrect, show error message
+            messages.error(request, 'Incorrect OTP. Please try again.')
+            return render(request, 'verify.html')
+
+    else:
+        messages.error(request, 'Invalid form submission.')
+        return render(request, 'verify.html')
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "successfully logged out")
+    return redirect('signup')
         
 
 def user_login(request):
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
+        username = request.POST.get('username')
+        password = request.POST.get('passwordd')  # Fixed typo here
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            fname = user.username
             messages.success(request, "Successfully Logged In")
-            return redirect('home')  # Redirect to the home page or any other desired page
+            return redirect("home")  # Redirect to the home page
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")
-            return render(request, "user_login.html")
+            return redirect('user_login')
 
     return render(request, "user_login.html")
 
+
 def signup(request):
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)  # Log in the user after signup
-            return redirect('login')  # Redirect to the login page or any other desired page
-    else:
-        form = SignUpForm()
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password1']
+        confirm_password = request.POST['password2']
 
-    return render(request, 'signup.html', {'form': form})
+        if User.objects.filter(username=username):
+            messages.error(request, 'Username already exists!')
+            return redirect('signup')
+
+        if len(username) > 10:
+            messages.error(request, "Username too long! Must be 10 characters or less.")
+
+        if password != confirm_password:
+            messages.error(request, "Passwords didn't match!")
+            return redirect('signup')
+
+        if not username.isalnum():
+            messages.error(request, "Username must be alphanumeric characters.")
+            return redirect('signup')
+
+        if password == confirm_password:
+            my_user = User.objects.create_user(username=username, email=email, password=password)
+            messages.success(request, "Account created successfully")
+
+            otp = generate_otp()
+
+            # Store OTP in the session
+            request.session['otp_sent_to_email'] = otp
+
+            # Call the email_alert function here passing the email address
+            email_alert("Welcome to Our Website", "Thank you for signing up!", email,otp)
+
+            return redirect('verify')
+        else:
+            messages.error(request, "Passwords don't match")
+            return redirect('signup')
+
+    return render(request, 'signup.html')
 
 
 def forgetpassword(request):
@@ -55,22 +204,284 @@ def forgetpassword(request):
 #     return render(request,'home.html')
 
 
+from datetime import timedelta
+from django.utils import timezone
+from django.shortcuts import render
+from .models import FinancialData, EmaCounts
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+import logging
+
+def calculate_ema20(stock_symbol):
+
+    # Get the current date
+    current_date = timezone.now().date()-timedelta(days=40)
+
+    # Calculate the date 20 days ago
+    start_date = current_date - timedelta(days=200)
+
+    # Retrieve the most recent 20 data points for the stock symbol
+    data_points = FinancialData.objects.filter(
+        symbol=stock_symbol,
+        date__range=[start_date, current_date]
+    ).order_by('-date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+    if not data_points:
+        return 0
+
+    ema20_counter = 0
+    for symbol, date, ema20, close_price in data_points:
+
+        if close_price > ema20:
+            if ema20_counter < 0:
+                ema20_counter = 1
+            else:
+                ema20_counter += 1
+        elif close_price < ema20:
+            if ema20_counter > 0:
+                ema20_counter = -1
+            else:
+                ema20_counter -= 1
+    print(stock_symbol, ema20_counter)
+    return ema20_counter
+
 @login_required
 def stocks(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'stocks.html', {'current_path': current_path})
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols = unique_symbols[:20]
 
+    result = []
+    for stock_symbol in unique_symbols:
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Calculate the date 20 days ago
+        start_date = current_date - timedelta(days=40)
+
+        # Retrieve the most recent 20 data points for the stock symbol
+        data_points = FinancialData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+        if not data_points:
+            continue
+        date_list=[]
+
+        ema20_counter = calculate_ema20(stock_symbol)
+        for symbol, date, ema20, close_price in data_points:
+            if date not in date_list:
+                date_list.append(date)
+            if ema20_counter > 0:
+                if close_price < ema20:
+                    ema20_counter =-1
+                else:
+                    ema20_counter += 1
+            else:
+                if close_price > ema20:
+                    ema20_counter =1
+                else:
+                    ema20_counter += 1
+            result.append((symbol, date, ema20_counter))
+
+    print(date_list)
+    context = {
+        'result': result,
+        'unique_symbols': unique_symbols,
+        'date_list': date_list
+    }
+    return render(request, 'stocks.html', context)
+
+
+
+# def stocks(request):
+    # # Get the distinct stock symbols
+    # stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    
+    # # Get the selected stock symbol from the query parameter
+    # symbol = request.GET.get('symbol')
+    
+    # # Initialize variables to store closing prices and calculate EMA20
+    # closing_prices = []
+    # ema20_values = []
+    
+    # if symbol:
+    #     # Get the current date
+    #     current_date = timezone.now().date()
+        
+    #     # Calculate the date 20 days ago
+    #     start_date = current_date - timedelta(days=20)
+        
+    #     # Query financial data for the selected stock and date range
+    #     financial_data = FinancialData.objects.filter(symbol=symbol, date__range=[start_date, current_date]).order_by('date')
+        
+    #     # Calculate EMA20 for the past 20 days
+    #     k = 2 / (20 + 1)  # EMA smoothing factor
+    #     for data_point in financial_data:
+    #         closing_prices.append(data_point.close_price)
+    #         if len(closing_prices) == 1:
+    #             ema20 = data_point.close_price
+    #         else:
+    #             ema20 = (data_point.close_price - ema20_values[-1]) * k + ema20_values[-1]
+    #         ema20_values.append(ema20)
+        
+    #     # Save the EMA20 count to the database
+    #     ema20_count = sum(1 for price in closing_prices[-20:] if price > ema20_values[-1])
+    #     ema_counts_instance, created = EmaCounts.objects.get_or_create(
+    #         stock_data=financial_data.last(),
+    #         defaults={'ema20_output': ema20_count}
+    #     )
+    # else:
+    #     financial_data = None
+    #     ema20_count = None
+    
+    # current_path = resolve(request.path_info).url_name
+
+    # return render(request, 'stocks.html', {'current_path': current_path, 'stock_symbols': stock_symbols, 'financial_data': financial_data, 'ema20_values': ema20_values, 'ema20_count': ema20_count})
+
+def calculate_ema20(stock_symbol):
+
+    # Get the current date
+    current_date = timezone.now().date()-timedelta(days=26)
+
+    # Calculate the date 20 days ago
+    start_date = current_date - timedelta(days=200)
+
+    # Retrieve the most recent 20 data points for the stock symbol
+    data_points = SectorData.objects.filter(
+        symbol=stock_symbol,
+        date__range=[start_date, current_date]
+    ).order_by('-date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+    if not data_points:
+        return 0
+
+    ema20_counter = 0
+    for symbol, date, ema20, close_price in data_points:
+
+        if close_price > ema20:
+            if ema20_counter < 0:
+                ema20_counter = 1
+            else:
+                ema20_counter += 1
+        elif close_price < ema20:
+            if ema20_counter > 0:
+                ema20_counter = -1
+            else:
+                ema20_counter -= 1
+    print(stock_symbol, ema20_counter)
+    return ema20_counter
 
 @login_required
 def sectors(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'sectors.html', {'current_path': current_path})
+    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols = unique_symbols[:20]
+
+    result = []
+    for stock_symbol in unique_symbols:
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Calculate the date 20 days ago
+        start_date = current_date - timedelta(days=40)
+
+        # Retrieve the most recent 20 data points for the stock symbol
+        data_points = SectorData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+        if not data_points:
+            continue
+        date_list=[]
+
+        ema20_counter = calculate_ema20(stock_symbol)
+        for symbol, date, ema20, close_price in data_points:
+            if date not in date_list:
+                date_list.append(date)
+            if ema20_counter > 0:
+                if close_price < ema20:
+                    ema20_counter =-1
+                else:
+                    ema20_counter += 1
+            else:
+                if close_price > ema20:
+                    ema20_counter =1
+                else:
+                    ema20_counter += 1
+            result.append((symbol, date, ema20_counter))
+
+    print(date_list)
+    context = {
+        'result': result,
+        'unique_symbols': unique_symbols,
+        'date_list': date_list
+    }
+    return render(request, 'sectors.html', context)
 
 
 @login_required
 def portfolio(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'portfolio.html',{'current_path': current_path})
+
+def home_temp(request):
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'home_template.html',{'current_path': current_path})
+    
+import logging
+from datetime import timedelta
+from django.shortcuts import render
+from django.utils import timezone
+from django.urls import resolve
+from .models import FinancialData
+
+logger = logging.getLogger(__name__)
+
+def stock_temp(request):
+    logger.debug("Os Errors come to me")
+
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols = unique_symbols[:20]
+
+    result = []
+    for stock_symbol in unique_symbols:
+        current_date = timezone.now().date()
+        start_date = current_date - timedelta(days=200)
+
+        data_points = FinancialData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('-date').values_list('date', 'ema20', 'close_price')
+
+        if not data_points:
+            continue
+
+        ema20_counter = 0
+        for date, ema20, close_price in data_points:
+            if ema20 is None:
+                continue
+            if close_price > ema20:
+                if ema20_counter < 0:
+                    break
+                ema20_counter += 1
+                result.append((date, ema20_counter))
+            elif close_price < ema20:
+                if ema20_counter > 0:
+                    break
+                ema20_counter -= 1
+                result.append((date, ema20_counter))
+
+    logger.debug(f"Result: {result}")
+
+    context = {
+        'result': result
+    }
+    logger.debug("Rendering stock_template.html template with context")
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'stock_template.html', context)
+
 
 @login_required
 def closed_positions(request):
@@ -98,11 +509,6 @@ def help(request):
 def about(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'about.html', {'current_path': current_path})
-
-@login_required
-def stocks(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'stocks.html', {'current_path': current_path})
 
 ########################################## Calculating Values ##################################
 ## Adding new Stocks data
@@ -437,6 +843,26 @@ from Stocks.models import FinancialData, EmaCounts,SectorData
 from datetime import timedelta
 from django.utils import timezone
 
+def home(request):
+    # Fetch distinct stock symbols from the database
+    stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+
+    # Fetch the latest EMA values for each EMA period
+    ema20_values = FinancialData.objects.values_list('ema20', flat=True).order_by('-date')[:1]
+    ema50_values = FinancialData.objects.values_list('ema50', flat=True).order_by('-date')[:1]
+    ema100_values = FinancialData.objects.values_list('ema100', flat=True).order_by('-date')[:1]
+    ema200_values = FinancialData.objects.values_list('ema200', flat=True).order_by('-date')[:1]
+
+    context = {
+        'stock_symbols': stock_symbols,
+        'ema20_values': ema20_values,
+        'ema50_values': ema50_values,
+        'ema100_values': ema100_values,
+        'ema200_values': ema200_values,
+    }
+
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'home.html', {'current_path': current_path, 'context': context})
 def analyze_closing_vs_ema(request):
     """
     This function analyzes the closing vs EMA for a given request. It retrieves financial data for unique stock symbols, calculates various moving averages and closing prices, and then creates and saves EmaCounts instances for each stock. Finally, it passes the results to the template for rendering.
@@ -776,10 +1202,13 @@ def graph_partial(request, symbol, ema_value):
         stock = FinancialData.objects.values_list('symbol', flat=True).distinct()
         current_path = resolve(request.path_info).url_name
         # Render the graph as HTML
+        current_path = resolve(request.path_info).url_name
+
         context = {
             'selected_symbol': symbol,
             'img_base64': img_base64,
-            'stock': stock
+            'stock': stock,
+            'current_path': current_path,
         }
         return render(request, 'graph_partial.html', context)
 
@@ -820,26 +1249,6 @@ from django.shortcuts import render
 from django.urls import resolve
 from .models import FinancialData
 
-def home(request):
-    # Fetch distinct stock symbols from the database
-    stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
-
-    # Fetch the latest EMA values for each EMA period
-    ema20_values = FinancialData.objects.values_list('ema20', flat=True).order_by('-date')[:1]
-    ema50_values = FinancialData.objects.values_list('ema50', flat=True).order_by('-date')[:1]
-    ema100_values = FinancialData.objects.values_list('ema100', flat=True).order_by('-date')[:1]
-    ema200_values = FinancialData.objects.values_list('ema200', flat=True).order_by('-date')[:1]
-
-    context = {
-        'stock_symbols': stock_symbols,
-        'ema20_values': ema20_values,
-        'ema50_values': ema50_values,
-        'ema100_values': ema100_values,
-        'ema200_values': ema200_values,
-    }
-
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'home.html', {'current_path': current_path, 'context': context})
 
 
 ################################ Comments ####################################################

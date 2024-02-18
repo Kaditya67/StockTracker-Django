@@ -12,8 +12,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -24,6 +28,13 @@ SECRET_KEY = 'django-insecure-0rkp9)%_5^@gt*4mh44t3!78eoyf%r6wh2fa9=7eahjy&jq++l
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+BASE_DIR = Path(__file__).resolve().parent.parent
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@gmail.com'  # Replace with your Gmail email
+EMAIL_HOST_PASSWORD = 'your_password'
 
 ALLOWED_HOSTS = []
 
@@ -31,6 +42,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+
     'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,6 +51,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Stocks.apps.StocksConfig',
+    'django.contrib.sites',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+   # 'allauth.socialaccount.providers.facebook',
+
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +70,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+
+    # Add the account middleware:
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'StockTracker.urls'
@@ -64,6 +93,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request'
             ],
         },
     },
@@ -100,7 +130,11 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    # Add other authentication backends here if needed
+    'allauth.account.auth_backends.AuthenticationBackend'
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -129,3 +163,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = [
     BASE_DIR / "static", # serve the files available inside static directory
 ]
+SITE_ID = 1
+
+#205524475510-krt63efbdoo8vqs1aodns8ltoasc00is.apps.googleusercontent.com
+#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
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'user_login'
+CRISPY_TEMPLATE_PACK = 'bootstrap4'

@@ -175,47 +175,56 @@ def stocks(request):
 
     unique_symbols = unique_symbols[:20]
 
+    ema_periods = [20, 50, 100, 200]
     result = []
+
     for stock_symbol in unique_symbols:
         current_date = timezone.now().date()
-        start_date = current_date - timedelta(days=200)
+        start_date = current_date - timedelta(days=max(ema_periods))
 
         data_points = FinancialData.objects.filter(
             symbol=stock_symbol,
             date__range=[start_date, current_date]
-        ).order_by('-date').values_list('date', 'ema20', 'close_price')
-
-        # logger.debug(f"Data points for {stock_symbol}: {data_points}")
+        ).order_by('-date').values_list('date', 'close_price')
 
         if not data_points:
-            # logger.debug(f"No data points found for {stock_symbol}")
             continue
 
-        ema20_counter = 0
-        for date, ema20, close_price in data_points:
-            if ema20 is None:
-                continue
-            if close_price > ema20:
-                if ema20_counter < 0:
-                    break
-                ema20_counter += 1
-                result.append((date, ema20_counter))
-                # logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
-            elif close_price < ema20:
-                if ema20_counter > 0:
-                    break
-                ema20_counter -= 1
-                result.append((date, ema20_counter))
-                logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
+        for date, close_price in data_points:
+            ema_counters = {period: 0 for period in ema_periods}
 
-    logger.debug(f"Result: {result}")
+            for period in ema_periods:
+                ema = calculate_ema(stock_symbol, date, period)
+                if ema is None:
+                    continue
+
+                if close_price > ema:
+                    ema_counters[period] += 1
+                elif close_price < ema:
+                    ema_counters[period] -= 1
+
+            result.append((date, ema_counters))
 
     context = {
         'result': result
     }
-    print(result)
-    logger.debug("Rendering stocks.html template with context")
-    return render(request, 'stocks.html', context)
+
+def calculate_ema(stock_symbol, date, period):
+    # Retrieve historical closing prices for the specified stock symbol and period
+    historical_prices = FinancialData.objects.filter(
+        symbol=stock_symbol,
+        date__lte=date
+    ).order_by('-date').values_list('close_price', flat=True)[:period]
+
+    if not historical_prices:
+        return None
+
+    # Calculate EMA
+    sma = sum(historical_prices) / len(historical_prices)
+    multiplier = 2 / (period + 1)
+    ema = (historical_prices[0] - sma) * multiplier + sma
+
+    return ema
 
 
 # def stocks(request):

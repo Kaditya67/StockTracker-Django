@@ -6,8 +6,9 @@
 <h1>Stocks Analysis</h1>
     <div class="results-container">
         {% comment %} <h2>Stocks</h2> {% endcomment %}
-        {% for date, ema20_counter in result %}
+        {% for symbol,date, ema20_counter in result %}
             <div class="result-item">
+                <p>symbol: {{ symbol }}</p>
                 <p>Date: {{ date }}</p>
                 <p>EMA20 Counter: {{ ema20_counter }}</p>
             </div>

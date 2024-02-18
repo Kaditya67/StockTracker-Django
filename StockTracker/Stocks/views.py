@@ -6,54 +6,16 @@ from django.contrib import messages
 from .models import ContactInformation
 from django.contrib.auth.decorators import login_required
 
-# # def sector_dashboard(request):
-# from django.db.models import Max
-# from django.shortcuts import render
-# from .models import SectorData, EmaCountsSector
-
-# def dashboard(request):
-#     # Get the latest date for each stock
-#     latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
-    
-#     sector_data = []
-#     ema_counts = []
-#     rs_values = []
-#     symbols = []
-#     for stock in latest_dates:
-#         latest_sector_data = SectorData.objects.filter(symbol=stock['symbol'], date=stock['latest_date']).first()
-#         if latest_sector_data:
-#             sector_data.append(latest_sector_data)
-#             ema_count = EmaCountsSector.objects.filter(stock_data=latest_sector_data).first()
-#             if ema_count:
-#                 ema_counts.append(ema_count)
-#                 rs_values.append(ema_count.rs_output)  # Append RS output value
-#                 symbols.append(latest_sector_data.symbol)  # Append symbol
-
-#     # Print out the retrieved RS output values (for debugging)
-#     # Print out the symbol and date of each SectorData object (for debugging)
-#     # Print out all values of each SectorData object (for debugging)
-#     for sector in sector_data:
-#         print(sector.__dict__)
-
-    
-#     selected_ema = request.GET.get('ema', '20')
-    
-#     context = {
-#         'sector_data': sector_data,
-#         'ema_counts': ema_counts,
-#         'rs_values': rs_values,
-#         'symbols': symbols,
-#         'selected_ema': selected_ema,
-#     }
-#     return render(request, 'dashboard.html', context)
-
-
 # def sector_dashboard(request):
 from django.shortcuts import render
 from .models import SectorData, EmaCountsSector
 from django.db.models import Max
 
 def dashboard(request):
+    """
+    A view function to render the dashboard page with the latest data for each stock.
+    Takes a request object and returns an HTML response with the dashboard template.
+    """
     # Get the latest date for each stock
     latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
     
@@ -89,6 +51,11 @@ def dashboard(request):
 
 
 def symbols_and_ema_counts(request):
+    """
+    Retrieve the latest record for each stock symbol.
+    Retrieve the EMA counts for each latest entry.
+    Pass the data to the template.
+    """
     # Retrieve the latest record for each stock symbol
     latest_entries = FinancialData.objects.values('symbol').annotate(
         latest_date=Max('date')
@@ -164,59 +131,86 @@ from django.utils import timezone
 from datetime import timedelta
 import logging
 
-# Get an instance of a logger
-logger = logging.getLogger(__name__)
+def calculate_ema20(stock_symbol):
+
+    # Get the current date
+    current_date = timezone.now().date()-timedelta(days=40)
+
+    # Calculate the date 20 days ago
+    start_date = current_date - timedelta(days=200)
+
+    # Retrieve the most recent 20 data points for the stock symbol
+    data_points = FinancialData.objects.filter(
+        symbol=stock_symbol,
+        date__range=[start_date, current_date]
+    ).order_by('-date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+    if not data_points:
+        return 0
+
+    ema20_counter = 0
+    for symbol, date, ema20, close_price in data_points:
+
+        if close_price > ema20:
+            if ema20_counter < 0:
+                ema20_counter = 1
+            else:
+                ema20_counter += 1
+        elif close_price < ema20:
+            if ema20_counter > 0:
+                ema20_counter = -1
+            else:
+                ema20_counter -= 1
+    print(stock_symbol, ema20_counter)
+    return ema20_counter
 
 @login_required
 def stocks(request):
-    # logger.debug("Entering stocks view function")
-
-    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
-    # logger.debug(f"Unique symbols: {unique_symbols}")
-
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
     unique_symbols = unique_symbols[:20]
 
     result = []
     for stock_symbol in unique_symbols:
+        # Get the current date
         current_date = timezone.now().date()
-        start_date = current_date - timedelta(days=200)
 
+        # Calculate the date 20 days ago
+        start_date = current_date - timedelta(days=40)
+
+        # Retrieve the most recent 20 data points for the stock symbol
         data_points = FinancialData.objects.filter(
             symbol=stock_symbol,
             date__range=[start_date, current_date]
-        ).order_by('-date').values_list('date', 'ema20', 'close_price')
-
-        # logger.debug(f"Data points for {stock_symbol}: {data_points}")
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
 
         if not data_points:
-            # logger.debug(f"No data points found for {stock_symbol}")
             continue
+        date_list=[]
 
-        ema20_counter = 0
-        for date, ema20, close_price in data_points:
-            if ema20 is None:
-                continue
-            if close_price > ema20:
-                if ema20_counter < 0:
-                    break
-                ema20_counter += 1
-                result.append((date, ema20_counter))
-                # logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
-            elif close_price < ema20:
-                if ema20_counter > 0:
-                    break
-                ema20_counter -= 1
-                result.append((date, ema20_counter))
-                logger.debug(f"Added data point: {date}, EMA20 Counter: {ema20_counter}")
+        ema20_counter = calculate_ema20(stock_symbol)
+        for symbol, date, ema20, close_price in data_points:
+            if date not in date_list:
+                date_list.append(date)
+            if ema20_counter > 0:
+                if close_price < ema20:
+                    ema20_counter =-1
+                else:
+                    ema20_counter += 1
+            else:
+                if close_price > ema20:
+                    ema20_counter =1
+                else:
+                    ema20_counter += 1
+            result.append((symbol, date, ema20_counter))
 
-    logger.debug(f"Result: {result}")
-
+    print(date_list)
     context = {
-        'result': result
+        'result': result,
+        'unique_symbols': unique_symbols,
+        'date_list': date_list
     }
-    print(result)
-    logger.debug("Rendering stocks.html template with context")
     return render(request, 'stocks.html', context)
+
 
 
 # def stocks(request):
@@ -264,20 +258,96 @@ def stocks(request):
 
     # return render(request, 'stocks.html', {'current_path': current_path, 'stock_symbols': stock_symbols, 'financial_data': financial_data, 'ema20_values': ema20_values, 'ema20_count': ema20_count})
 
+def calculate_ema20(stock_symbol):
+
+    # Get the current date
+    current_date = timezone.now().date()-timedelta(days=26)
+
+    # Calculate the date 20 days ago
+    start_date = current_date - timedelta(days=200)
+
+    # Retrieve the most recent 20 data points for the stock symbol
+    data_points = SectorData.objects.filter(
+        symbol=stock_symbol,
+        date__range=[start_date, current_date]
+    ).order_by('-date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+    if not data_points:
+        return 0
+
+    ema20_counter = 0
+    for symbol, date, ema20, close_price in data_points:
+
+        if close_price > ema20:
+            if ema20_counter < 0:
+                ema20_counter = 1
+            else:
+                ema20_counter += 1
+        elif close_price < ema20:
+            if ema20_counter > 0:
+                ema20_counter = -1
+            else:
+                ema20_counter -= 1
+    print(stock_symbol, ema20_counter)
+    return ema20_counter
 
 @login_required
 def sectors(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'sectors.html', {'current_path': current_path})
+    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols = unique_symbols[:20]
+
+    result = []
+    for stock_symbol in unique_symbols:
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Calculate the date 20 days ago
+        start_date = current_date - timedelta(days=40)
+
+        # Retrieve the most recent 20 data points for the stock symbol
+        data_points = SectorData.objects.filter(
+            symbol=stock_symbol,
+            date__range=[start_date, current_date]
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+
+        if not data_points:
+            continue
+        date_list=[]
+
+        ema20_counter = calculate_ema20(stock_symbol)
+        for symbol, date, ema20, close_price in data_points:
+            if date not in date_list:
+                date_list.append(date)
+            if ema20_counter > 0:
+                if close_price < ema20:
+                    ema20_counter =-1
+                else:
+                    ema20_counter += 1
+            else:
+                if close_price > ema20:
+                    ema20_counter =1
+                else:
+                    ema20_counter += 1
+            result.append((symbol, date, ema20_counter))
+
+    print(date_list)
+    context = {
+        'result': result,
+        'unique_symbols': unique_symbols,
+        'date_list': date_list
+    }
+    return render(request, 'sectors.html', context)
 
 
 @login_required
 def portfolio(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'portfolio.html',{'current_path': current_path})
+
 def home_temp(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'home_template.html',{'current_path': current_path})
+    
 import logging
 from datetime import timedelta
 from django.shortcuts import render

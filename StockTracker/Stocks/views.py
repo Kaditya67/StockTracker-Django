@@ -121,7 +121,6 @@ def forgetpassword(request):
 # def home(request):
 #     return render(request,'home.html')
 
-
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render
@@ -131,7 +130,7 @@ from django.utils import timezone
 from datetime import timedelta
 import logging
 
-def calculate_ema20(stock_symbol):
+def calculate_Stocks_ema20(stock_symbol):
 
     # Get the current date
     current_date = timezone.now().date()-timedelta(days=40)
@@ -187,7 +186,7 @@ def stocks(request):
             continue
         date_list=[]
 
-        ema20_counter = calculate_ema20(stock_symbol)
+        ema20_counter = calculate_Stocks_ema20(stock_symbol)
         for symbol, date, ema20, close_price in data_points:
             if date not in date_list:
                 date_list.append(date)
@@ -200,14 +199,16 @@ def stocks(request):
                 if close_price > ema20:
                     ema20_counter =1
                 else:
-                    ema20_counter += 1
+                    ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
     print(date_list)
+    current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
         'unique_symbols': unique_symbols,
-        'date_list': date_list
+        'date_list': date_list,
+        'current_path': current_path
     }
     return render(request, 'stocks.html', context)
 
@@ -261,7 +262,7 @@ def stocks(request):
 def calculate_ema20(stock_symbol):
 
     # Get the current date
-    current_date = timezone.now().date()-timedelta(days=26)
+    current_date = timezone.now().date()-timedelta(days=40)
 
     # Calculate the date 20 days ago
     start_date = current_date - timedelta(days=200)
@@ -309,7 +310,8 @@ def sectors(request):
             symbol=stock_symbol,
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
-
+        print("data_points---------------------------------------------")
+        # print(data_points)
         if not data_points:
             continue
         date_list=[]
@@ -327,14 +329,16 @@ def sectors(request):
                 if close_price > ema20:
                     ema20_counter =1
                 else:
-                    ema20_counter += 1
+                    ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    print(date_list)
+    # print(date_list)
+    current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
         'unique_symbols': unique_symbols,
-        'date_list': date_list
+        'date_list': date_list,
+        'current_path': current_path
     }
     return render(request, 'sectors.html', context)
 

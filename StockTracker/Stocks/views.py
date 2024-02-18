@@ -82,7 +82,6 @@ def dashboard(request):
         'selected_ema': selected_ema,
         'current_path': current_path,
     }
-    
     # current_path = resolve(request.path_info).url_name
     # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
@@ -308,11 +307,6 @@ def help(request):
 def about(request):
     current_path = resolve(request.path_info).url_name
     return render(request, 'about.html', {'current_path': current_path})
-
-@login_required
-def stocks(request):
-    current_path = resolve(request.path_info).url_name
-    return render(request, 'stocks.html', {'current_path': current_path})
 
 ########################################## Calculating Values ##################################
 ## Adding new Stocks data

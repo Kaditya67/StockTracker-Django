@@ -38,6 +38,9 @@ from .email_alerts import email_alert
 from .utils import generate_otp
 from .email_alerts import email_password
 
+
+def leave_page(request):
+    return render(request, 'leave_page.html')
 def verify_password(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -56,7 +59,7 @@ def verify_password(request):
                 messages.success(request, 'Password changed successfully.')
             else:
                 messages.error(request, "Passwords don't match.")
-            return redirect('user_login')
+            return redirect('leave_page')
         else:
             # Email or username do not match
             messages.error(request, "Invalid email address or username.")
@@ -251,7 +254,7 @@ def forgetpassword(request):
             # If the email is empty, display an error message
             messages.error(request, "Please provide a valid email address.")
 
-        return redirect('forgetpassword')
+        return redirect('user_login')
 
     return render(request, 'forgetpassword.html')
 

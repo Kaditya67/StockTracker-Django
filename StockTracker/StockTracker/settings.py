@@ -12,12 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-
-
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,6 +23,7 @@ from pathlib import Path
 SECRET_KEY = 'django-insecure-0rkp9)%_5^@gt*4mh44t3!78eoyf%r6wh2fa9=7eahjy&jq++l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 DEBUG = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -42,8 +39,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-
-    'django_extensions',
+    # 'fontawesomefree',
+    # 'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,9 +54,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-   # 'allauth.socialaccount.providers.facebook',
-
-    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -70,11 +64,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "django.middleware.common.CommonMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
 
     # Add the account middleware:
     "allauth.account.middleware.AccountMiddleware",
@@ -93,7 +82,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request'
             ],
         },
     },
@@ -102,7 +90,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'StockTracker.wsgi.application'
 
 
-# Database
+# Databasex``
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
@@ -130,6 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     # Add other authentication backends here if needed
@@ -163,6 +152,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = [
     BASE_DIR / "static", # serve the files available inside static directory
 ]
+
 SITE_ID = 1
 
 #205524475510-krt63efbdoo8vqs1aodns8ltoasc00is.apps.googleusercontent.com

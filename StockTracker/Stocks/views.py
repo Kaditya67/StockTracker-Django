@@ -10,6 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import SectorData, EmaCountsSector
 from django.db.models import Max
+
+
+# Email
+
 import http
 
 from django.contrib.auth import login, authenticate
@@ -33,6 +37,30 @@ from django.urls import reverse
 from .email_alerts import email_alert
 from .utils import generate_otp
 
+def verify_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        username = request.POST.get('username')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        # Check if the email and username match with database records
+        user = User.objects.filter(email=email, username=username).first()
+        if user:
+            # Email and username match, proceed with password change
+            if new_password == confirm_password:
+                # Change the user's password
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Password changed successfully.')
+            else:
+                messages.error(request, "Passwords don't match.")
+        else:
+            # Email or username do not match
+            messages.error(request, "Invalid email address or username.")
+
+    return render(request, 'user_login.html')
+    
 def dashboard(request):
     """
     A view function to render the dashboard page with the latest data for each stock.
@@ -106,6 +134,8 @@ def index(request):
         messages.success(request,"Contact Form Submitted !")
 
     return render(request,'index.html')
+        
+## User logout and verify
 
 def subscription(request):
     return render(request, 'subscription.html')
@@ -135,25 +165,22 @@ def user_logout(request):
     logout(request)
     messages.success(request, "successfully logged out")
     return redirect('signup')
-        
 
 def user_login(request):
     if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('passwordd')  # Fixed typo here
-        user = authenticate(request, username=username, password=password)
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            fname = user.username
             messages.success(request, "Successfully Logged In")
-            return redirect("home")  # Redirect to the home page
+            return redirect('home')  # Redirect to the home page or any other desired page
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")
-            return redirect('user_login')
+            return render(request, "user_login.html")
 
     return render(request, "user_login.html")
-
 
 def signup(request):
     if request.method == 'POST':
@@ -203,7 +230,6 @@ def forgetpassword(request):
 # def home(request):
 #     return render(request,'home.html')
 
-
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render
@@ -213,7 +239,7 @@ from django.utils import timezone
 from datetime import timedelta
 import logging
 
-def calculate_ema20(stock_symbol):
+def calculate_Stocks_ema20(stock_symbol):
 
     # Get the current date
     current_date = timezone.now().date()-timedelta(days=40)
@@ -269,7 +295,7 @@ def stocks(request):
             continue
         date_list=[]
 
-        ema20_counter = calculate_ema20(stock_symbol)
+        ema20_counter = calculate_Stocks_ema20(stock_symbol)
         for symbol, date, ema20, close_price in data_points:
             if date not in date_list:
                 date_list.append(date)
@@ -282,14 +308,16 @@ def stocks(request):
                 if close_price > ema20:
                     ema20_counter =1
                 else:
-                    ema20_counter += 1
+                    ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
     print(date_list)
+    current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
         'unique_symbols': unique_symbols,
-        'date_list': date_list
+        'date_list': date_list,
+        'current_path': current_path
     }
     return render(request, 'stocks.html', context)
 
@@ -343,7 +371,7 @@ def stocks(request):
 def calculate_ema20(stock_symbol):
 
     # Get the current date
-    current_date = timezone.now().date()-timedelta(days=26)
+    current_date = timezone.now().date()-timedelta(days=40)
 
     # Calculate the date 20 days ago
     start_date = current_date - timedelta(days=200)
@@ -391,7 +419,8 @@ def sectors(request):
             symbol=stock_symbol,
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
-
+        print("data_points---------------------------------------------")
+        # print(data_points)
         if not data_points:
             continue
         date_list=[]
@@ -409,14 +438,16 @@ def sectors(request):
                 if close_price > ema20:
                     ema20_counter =1
                 else:
-                    ema20_counter += 1
+                    ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    print(date_list)
+    # print(date_list)
+    current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
         'unique_symbols': unique_symbols,
-        'date_list': date_list
+        'date_list': date_list,
+        'current_path': current_path
     }
     return render(request, 'sectors.html', context)
 

@@ -279,17 +279,16 @@
           </li>
           <br> 
           <!-- Logout -->
-          <form id = "logout-form" method = "post" action="{% url 'user_logout' %}" class="nav-item">
-              {% csrf_token %}
+          <li class="nav-item">
             <button
-              type="submit"
+              type="button"
               onclick="confirmLogout()"
               class="logout-button nav-link text-light"
               style="background-color: #695cfe"
             >
               <i class="fas fa-sign-out-alt logout-icon"></i>
               <span class="nav-text">Logout</span>
-            </button></form>
+            </button>
           </li>
         </ul>
       </div>
@@ -400,17 +399,6 @@
 
       window.onload = setInitialMode;
     </script>
-    <script>
-    function confirmLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-            // If user confirms, submit the logout form
-            document.getElementById("logout-form").submit();
-        } else {
-            // If user cancels, do nothing
-            return false;
-        }
-    }
-</script>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>

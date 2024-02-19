@@ -36,6 +36,7 @@ import string
 from django.urls import reverse
 from .email_alerts import email_alert
 from .utils import generate_otp
+from .email_alerts import email_password
 
 def verify_password(request):
     if request.method == 'POST':
@@ -55,11 +56,12 @@ def verify_password(request):
                 messages.success(request, 'Password changed successfully.')
             else:
                 messages.error(request, "Passwords don't match.")
+            return redirect('user_login')
         else:
             # Email or username do not match
             messages.error(request, "Invalid email address or username.")
 
-    return render(request, 'user_login.html')
+    return render(request, 'verify_password.html')
     
 def dashboard(request):
     """
@@ -225,7 +227,34 @@ def signup(request):
 
 
 def forgetpassword(request):
-    return render(request,'forgetpassword.html')
+    if request.method == 'GET':
+        return render(request, 'forgetpassword.html')
+
+    elif request.method == 'POST':
+        email = request.POST.get('email')
+
+        # Check if the email is valid (you may want to add more thorough validation)
+        if email:
+
+
+            # Compose the email body with the verification link
+            email_subject = "Password Reset Request"
+            email_body = f"Click the following link to reset your password: http://127.0.0.1:8000/verify_password/"
+
+            # Send the verification email
+            email_password(email_subject, email_body, email)
+
+            # Optionally, you can display a success message
+            messages.success(request, "An email with instructions to reset your password has been sent to your email address.")
+
+        else:
+            # If the email is empty, display an error message
+            messages.error(request, "Please provide a valid email address.")
+
+        return redirect('forgetpassword')
+
+    return render(request, 'forgetpassword.html')
+
 
 # def home(request):
 #     return render(request,'home.html')

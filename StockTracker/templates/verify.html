@@ -16,6 +16,18 @@
             height: 100vh;
         }
 
+        .alert {
+            padding: 20px;
+            background-color: lightskyblue;
+            color: white;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            text-align: center;
+        }
+
         form {
             background-color: #ffffff;
             padding: 20px;
@@ -60,6 +72,20 @@
     </style>
 </head>
 <body>
+    <!-- Alert with Close Button -->
+    <div class="alert alert-info" role="alert">
+        An Verification OTP has been sent to your Email Address!
+    </div>
+
+    <!-- Error Message Alert -->
+    {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
     <form method="post">
         {% csrf_token %}
         <h1>Verify Email</h1>

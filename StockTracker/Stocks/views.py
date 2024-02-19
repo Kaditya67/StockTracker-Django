@@ -57,9 +57,10 @@ def verify_password(request):
                 user.set_password(new_password)
                 user.save()
                 messages.success(request, 'Password changed successfully.')
+                return redirect('leave_page')
             else:
                 messages.error(request, "Passwords don't match.")
-            return redirect('leave_page')
+
         else:
             # Email or username do not match
             messages.error(request, "Invalid email address or username.")
@@ -171,11 +172,15 @@ def user_logout(request):
     messages.success(request, "successfully logged out")
     return redirect('signup')
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+
 def user_login(request):
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             messages.success(request, "Successfully Logged In")
@@ -186,6 +191,7 @@ def user_login(request):
             return render(request, "user_login.html")
 
     return render(request, "user_login.html")
+
 
 def signup(request):
     if request.method == 'POST':

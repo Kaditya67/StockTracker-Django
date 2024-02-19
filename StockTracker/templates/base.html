@@ -180,6 +180,7 @@
     </style>
   </head>
   <body>
+
     <div id="sidebar">
       <nav class="navbar navbar-dark">
         <a class="navbar-brand" href="#">StockTrack</a>
@@ -403,5 +404,27 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <!-- JavaScript to check if the welcome box should be displayed -->
+    <script>
+        // Function to check if the welcome box should be displayed
+        function displayWelcomeBox() {
+            // Check if the welcome box has already been displayed (using local storage)
+            var welcomeDisplayed = localStorage.getItem('welcomeDisplayed');
+
+            // If the welcome box has not been displayed yet, show it
+            if (!welcomeDisplayed) {
+                // Display the welcome box
+                var welcomeBox = document.getElementById('welcomeBox');
+                welcomeBox.style.display = 'block';
+
+                // Set a flag in local storage to indicate that the welcome box has been displayed
+                localStorage.setItem('welcomeDisplayed', true);
+            }
+        }
+
+        // Call the function to display the welcome box
+        window.onload = displayWelcomeBox;
+    </script>
+
   </body>
 </html>

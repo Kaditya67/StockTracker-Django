@@ -5,11 +5,37 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .models import ContactInformation
 from django.contrib.auth.decorators import login_required
-
-# def sector_dashboard(request):
 from django.shortcuts import render
 from .models import SectorData, EmaCountsSector
 from django.db.models import Max
+from django.shortcuts import render
+from django.urls import resolve
+
+from django.http import JsonResponse
+from .models import SectorData
+
+def fetch_sector_data(request):
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol')
+        try:
+            # Fetch the latest data for the symbol from the database
+            sector_data = SectorData.objects.filter(symbol=symbol).latest('date')
+            data = {
+                'date': sector_data.date.strftime('%Y-%m-%d'),
+                'symbol': sector_data.symbol,
+                'closing_price': sector_data.close_price,
+            }
+            print(data)
+
+            return JsonResponse({'success': True, 'data': data})
+        except SectorData.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Sector data not found for the symbol.'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+def watchlist(request):
+    current_path = resolve(request.path_info).url_name
+    return render(request, 'watchlist.html',{'current_path': current_path})
 
 def dashboard(request):
     """
@@ -289,7 +315,7 @@ def calculate_ema20(stock_symbol):
                 ema20_counter = -1
             else:
                 ema20_counter -= 1
-    print(stock_symbol, ema20_counter)
+    #print(stock_symbol, ema20_counter)
     return ema20_counter
 
 @login_required
@@ -310,7 +336,7 @@ def sectors(request):
             symbol=stock_symbol,
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
-        print("data_points---------------------------------------------")
+        #print("data_points---------------------------------------------")
         # print(data_points)
         if not data_points:
             continue

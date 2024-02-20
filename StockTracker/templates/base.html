@@ -1,6 +1,30 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+    <!-- Include CSRF token -->
+    <script>
+        // Set CSRF token for AJAX requests
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken');
+    </script>
     <title>{% block title %}My Site{% endblock %}</title>
     <meta charset="UTF-8" />
     <meta
@@ -15,7 +39,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
     />
-    <link rel="stylesheet" type="text/css" href="./styles.css" />
+    <link rel="stylesheet" href="{% static 'stocks/styles.css' %}">
     <style>
       #toggleButton {
         position: absolute;
@@ -246,7 +270,14 @@
               <span class="nav-text">Settings</span>
             </a>
           </li>
-
+          <li
+            class="nav-item {% if current_path == 'settings' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'watchlist' %}">
+              <i class="fas fa-bars"></i>
+              <span class="nav-text">watchlist</span>
+            </a>
+          </li>
           <!-- Help -->
           <li class="nav-item {% if current_path == 'help' %}active{% endif %}">
             <a class="nav-link text-light" href="{% url 'help' %}">

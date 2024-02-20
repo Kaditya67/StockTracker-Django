@@ -38,6 +38,8 @@ from .email_alerts import email_alert
 from .utils import generate_otp
 from .email_alerts import email_password
 
+def alerts(request):
+    return render(request, 'alerts.html')
 
 def leave_page(request):
     return render(request, 'leave_page.html')
@@ -184,7 +186,7 @@ def user_login(request):
         if user is not None:
             login(request, user)
             messages.success(request, "Successfully Logged In")
-            return redirect('home')  # Redirect to the home page or any other desired page
+            return redirect('dashboard')  # Redirect to the home page or any other desired page
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")

@@ -312,9 +312,9 @@ def calculate_Stocks_ema20(stock_symbol):
 
 @login_required
 def stocks(request):
-    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
-    unique_symbols = unique_symbols[:20]
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
 
+    symbols_to_remove = []
     result = []
     for stock_symbol in unique_symbols:
         # Get the current date
@@ -329,8 +329,14 @@ def stocks(request):
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
 
-        if not data_points:
+        if not data_points or not all(data_point[2] for data_point in data_points):
+            symbols_to_remove.append(stock_symbol)
             continue
+        
+        if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+            symbols_to_remove.append(stock_symbol)
+            continue
+        
         date_list=[]
 
         ema20_counter = calculate_Stocks_ema20(stock_symbol)
@@ -349,7 +355,8 @@ def stocks(request):
                     ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    print(date_list)
+    # print(date_list)
+    unique_symbols = [symbol for symbol in unique_symbols if symbol not in symbols_to_remove]
     current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
@@ -358,8 +365,6 @@ def stocks(request):
         'current_path': current_path
     }
     return render(request, 'stocks.html', context)
-
-
 
 # def stocks(request):
     # # Get the distinct stock symbols
@@ -441,9 +446,9 @@ def calculate_ema20(stock_symbol):
 
 @login_required
 def sectors(request):
-    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
-    unique_symbols = unique_symbols[:20]
-
+    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()[:20]
+    
+    symbols_to_remove = []
     result = []
     for stock_symbol in unique_symbols:
         # Get the current date
@@ -459,8 +464,15 @@ def sectors(request):
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
         print("data_points---------------------------------------------")
         # print(data_points)
-        if not data_points:
+        
+        if not data_points or not all(data_point[2] for data_point in data_points):
+            symbols_to_remove.append(stock_symbol)
             continue
+        
+        if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+            symbols_to_remove.append(stock_symbol)
+            continue
+
         date_list=[]
 
         ema20_counter = calculate_ema20(stock_symbol)
@@ -481,6 +493,7 @@ def sectors(request):
 
     # print(date_list)
     current_path = resolve(request.path_info).url_name
+    unique_symbols = list(set(unique_symbols) - set(symbols_to_remove))
     context = {
         'result': result,
         'unique_symbols': unique_symbols,

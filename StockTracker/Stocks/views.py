@@ -165,6 +165,10 @@ def verify(request):
             messages.error(request, 'Incorrect OTP. Please try again.')
             return render(request, 'verify.html')
 
+    elif request.method == 'GET':
+        # Handle GET request (e.g., display the verify page)
+        return render(request, 'verify.html')
+
     else:
         messages.error(request, 'Invalid form submission.')
         return render(request, 'verify.html')
@@ -172,7 +176,7 @@ def verify(request):
 def user_logout(request):
     logout(request)
     messages.success(request, "successfully logged out")
-    return redirect('signup')
+    return redirect('index')
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -185,7 +189,7 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, "Successfully Logged In")
+           # messages.success(request, "Successfully Logged In")
             return redirect('dashboard')  # Redirect to the home page or any other desired page
         else:
             print(f"Failed login attempt for user: {username}")
@@ -219,7 +223,7 @@ def signup(request):
 
         if password == confirm_password:
             my_user = User.objects.create_user(username=username, email=email, password=password)
-            messages.success(request, "Account created successfully")
+           # messages.success(request, "Account created successfully")
 
             otp = generate_otp()
 

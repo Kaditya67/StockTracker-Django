@@ -11,32 +11,110 @@ from django.db.models import Max
 from django.shortcuts import render
 from django.urls import resolve
 
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from .models import SectorData
+from json.decoder import JSONDecodeError  # Import JSONDecodeError
+from .models import stock_user  # Import the stock_user model
+import json
 
+@login_required
 def fetch_sector_data(request):
     if request.method == 'POST':
         symbol = request.POST.get('symbol')
+        user = request.user  # Get the current logged-in user
         try:
             # Fetch the latest data for the symbol from the database
             sector_data = SectorData.objects.filter(symbol=symbol).latest('date')
-            data = {
+            # Serialize the data dictionary
+            serialized_data = {
                 'date': sector_data.date.strftime('%Y-%m-%d'),
                 'symbol': sector_data.symbol,
-                'closing_price': sector_data.close_price,
+                'closing_price': float(sector_data.close_price),  # Convert Decimal to float
             }
-            print(data)
-
-            return JsonResponse({'success': True, 'data': data})
+            # Get the user's watchlist_sector
+            watchlist_sector = user.watchlist_sector
+            if watchlist_sector:  # Check if watchlist_sector is not empty
+                try:
+                    watchlist_sector = json.loads(watchlist_sector)
+                except JSONDecodeError:
+                    # Handle invalid JSON data
+                    watchlist_sector = []
+            else:
+                watchlist_sector = []
+            # Append the serialized data to the watchlist_sector
+            watchlist_sector.append(serialized_data)
+            # Save the updated watchlist_sector to the user
+            user.watchlist_sector = json.dumps(watchlist_sector)
+            user.save()
+            print(serialized_data)
+            return JsonResponse({'success': True, 'data': serialized_data})
         except SectorData.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Sector data not found for the symbol.'})
     else:
         return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
+
 def watchlist(request):
     current_path = resolve(request.path_info).url_name
-    return render(request, 'watchlist.html',{'current_path': current_path})
+    user = request.user
+    watchlist_sector = json.loads(user.watchlist_sector)
+    return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector})
 
+# Email
+
+import http
+
+from django.contrib.auth import login, authenticate
+from django.core.mail import send_mail
+
+from .forms import SignUpForm
+from django.shortcuts import render, redirect, HttpResponse
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib import messages
+from .models import ContactInformation
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.conf import settings
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import random
+import string
+from django.urls import reverse
+from .email_alerts import email_alert
+from .utils import generate_otp
+from .email_alerts import email_password
+
+
+def leave_page(request):
+    return render(request, 'leave_page.html')
+def verify_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        username = request.POST.get('username')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        # Check if the email and username match with database records
+        user = User.objects.filter(email=email, username=username).first()
+        if user:
+            # Email and username match, proceed with password change
+            if new_password == confirm_password:
+                # Change the user's password
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Password changed successfully.')
+                return redirect('leave_page')
+            else:
+                messages.error(request, "Passwords don't match.")
+
+        else:
+            # Email or username do not match
+            messages.error(request, "Invalid email address or username.")
+
+    return render(request, 'verify_password.html')
+    
 def dashboard(request):
     """
     A view function to render the dashboard page with the latest data for each stock.
@@ -111,12 +189,46 @@ def index(request):
 
     return render(request,'index.html')
         
+## User logout and verify
+
+def subscription(request):
+    return render(request, 'subscription.html')
+
+def verify(request):
+    if request.method == 'POST':
+        print('Form submitted via POST request')
+        user_entered_otp = request.POST.get('otp')
+        otp_sent_to_email = request.session.get('otp_sent_to_email')
+        print('User-entered OTP:', user_entered_otp)
+        print('OTP sent to email:', otp_sent_to_email)
+
+        if user_entered_otp == otp_sent_to_email:
+            # OTP is correct, perform further actions
+            # For example, mark the user as verified
+            return redirect('user_login')
+        else:
+            # OTP is incorrect, show error message
+            messages.error(request, 'Incorrect OTP. Please try again.')
+            return render(request, 'verify.html')
+
+    else:
+        messages.error(request, 'Invalid form submission.')
+        return render(request, 'verify.html')
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "successfully logged out")
+    return redirect('signup')
+
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+from .models import stock_user  # Import your custom user model
 
 def user_login(request):
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             messages.success(request, "Successfully Logged In")
@@ -130,19 +242,70 @@ def user_login(request):
 
 def signup(request):
     if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)  # Log in the user after signup
-            return redirect('login')  # Redirect to the login page or any other desired page
-    else:
-        form = SignUpForm()
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password1']
+        confirm_password = request.POST['password2']
 
-    return render(request, 'signup.html', {'form': form})
+        if stock_user.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists!')
+            return redirect('signup')
+
+        if password != confirm_password:
+            messages.error(request, "Passwords didn't match!")
+            return redirect('signup')
+
+        if len(username) > 10:
+            messages.error(request, "Username too long! Must be 10 characters or less.")
+            return redirect('signup')
+
+        if not username.isalnum():
+            messages.error(request, "Username must be alphanumeric characters.")
+            return redirect('signup')
+
+        if password == confirm_password:
+            # Create the user using your custom user model
+            my_user = stock_user.objects.create_user(username=username, email=email, password=password)
+            messages.success(request, "Account created successfully")
+            
+            # Redirect the user to the appropriate page after sign up
+            return redirect('verify')  # Replace 'verify' with the name of your verification page
+        else:
+            messages.error(request, "Passwords don't match")
+            return redirect('signup')
+
+    return render(request, 'signup.html')
 
 
 def forgetpassword(request):
-    return render(request,'forgetpassword.html')
+    if request.method == 'GET':
+        return render(request, 'forgetpassword.html')
+
+    elif request.method == 'POST':
+        email = request.POST.get('email')
+
+        # Check if the email is valid (you may want to add more thorough validation)
+        if email:
+
+
+            # Compose the email body with the verification link
+            email_subject = "Password Reset Request"
+            email_body = f"Click the following link to reset your password: http://127.0.0.1:8000/verify_password/"
+
+            # Send the verification email
+            email_password(email_subject, email_body, email)
+
+            # Optionally, you can display a success message
+            messages.success(request, "An email with instructions to reset your password has been sent to your email address.")
+
+        else:
+            # If the email is empty, display an error message
+            messages.error(request, "Please provide a valid email address.")
+
+        return redirect('user_login')
+
+    return render(request, 'forgetpassword.html')
+
 
 # def home(request):
 #     return render(request,'home.html')
@@ -336,8 +499,7 @@ def sectors(request):
             symbol=stock_symbol,
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
-        #print("data_points---------------------------------------------")
-        # print(data_points)
+
         if not data_points:
             continue
         date_list=[]

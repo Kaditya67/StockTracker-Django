@@ -51,19 +51,15 @@
                                     url: '{% url "watchlist" %}',
                                     type: 'GET',
                                     success: function(data) {
-                                        var tableRow = '<tr><td>' + response.data.date + '</td><td>' + response.data.symbol + '</td><td>' + response.data.closing_price + '</td></tr>';
-                                        $('#watchlist-body').append(tableRow);
-                                        
-                                        // Store the data in localStorage
-                                        localStorage.setItem('watchlistData', JSON.stringify(response.data));
+                                        alert("Sector added successfully to watchlist")
                                         
                                     },
                                     error: function(xhr, status, error) {
-                                        alert('Failed to fetch watchlist template. Please try again.');
+                                        alert('Failed to Sector to watchlist. Please try again.');
                                     }
                                 });
                             } else {
-                                alert('Failed to fetch sector data. Please try again.');
+                                alert('Failed to Sector to watchlist. Please try again.');
                             }
                         },
                         error: function(xhr, status, error) {

@@ -1,22 +1,17 @@
 # stockapp/admin.py
 from django.contrib import admin
-from Stocks.models import ContactInformation
 
-admin.site.register(ContactInformation)
+from . models import stock_user
+admin.site.register(stock_user)
 
 
 # stocks/admin.py
 from .models import FinancialData
-
 admin.site.register(FinancialData)
-# stocks/admin.py
-from .models import SectorData
 
+from .models import SectorData
 admin.site.register(SectorData)
 
-# from .models import IndicatorValues
-
-# admin.site.register(IndicatorValues)
 from .models import EmaCounts
 admin.site.register(EmaCounts)
 

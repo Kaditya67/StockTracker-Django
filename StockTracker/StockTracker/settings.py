@@ -25,6 +25,14 @@ SECRET_KEY = 'django-insecure-0rkp9)%_5^@gt*4mh44t3!78eoyf%r6wh2fa9=7eahjy&jq++l
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG = True
+BASE_DIR = Path(__file__).resolve().parent.parent
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@gmail.com'  # Replace with your Gmail email
+EMAIL_HOST_PASSWORD = 'your_password'
 
 ALLOWED_HOSTS = []
 
@@ -41,6 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Stocks.apps.StocksConfig',
+    'allauth',
+    'allauth.account',
     
 ]
 
@@ -52,6 +62,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Add the account middleware:
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'StockTracker.urls'
@@ -75,7 +88,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'StockTracker.wsgi.application'
 
 
-# Database
+# Databasex``
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
@@ -103,6 +116,14 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    # Add other authentication backends here if needed
+    'allauth.account.auth_backends.AuthenticationBackend'
+]
+
+AUTH_USER_MODEL = 'Stocks.stock_user'
 
 
 # Internationalization

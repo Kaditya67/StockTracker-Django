@@ -24,4 +24,5 @@ admin.site.index_title="StockTracker to Aditya's Portfolio"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('Stocks.urls')),
+    path('accounts/', include('allauth.urls')),
 ]

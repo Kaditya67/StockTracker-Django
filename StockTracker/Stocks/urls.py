@@ -4,6 +4,11 @@ from . import views
 urlpatterns = [
     path('',views.index,name="index"),
     path('login/',views.user_login,name="user_login"),
+    path('logout/',views.user_logout,name="user_logout"),
+    path('verify/',views.verify,name="verify"),
+    path('verify_password/',views.verify_password,name="verify_password"),
+    path('subscription/', views.subscription, name='subscription'),
+    path('leave_page/', views.leave_page, name='leave_page'),
     # path('your-view/', your_view, name='your_view'),
     path('signup/',views.signup,name="signup"),
     path('forgotpassword/',views.forgetpassword,name="forgetpassword"),
@@ -36,6 +41,7 @@ urlpatterns = [
     path('stock_template/', views.stock_temp, name='stock_template'),
     path('watchlist/', views.watchlist, name='watchlist'),
     path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
+
 ]
 
     # path('graph/<str:symbol>/<int:ema_value>/', views.graph, name='graph'),

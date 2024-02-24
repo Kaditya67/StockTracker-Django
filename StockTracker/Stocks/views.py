@@ -86,6 +86,8 @@ from .email_alerts import email_alert
 from .utils import generate_otp
 from .email_alerts import email_password
 
+def alerts(request):
+    return render(request, 'alerts.html')
 
 def leave_page(request):
     return render(request, 'leave_page.html')
@@ -153,6 +155,8 @@ def dashboard(request):
     # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
 
+from .models import FinancialData
+from .models import EmaCounts
 
 def symbols_and_ema_counts(request):
     """
@@ -211,6 +215,10 @@ def verify(request):
             messages.error(request, 'Incorrect OTP. Please try again.')
             return render(request, 'verify.html')
 
+    elif request.method == 'GET':
+        # Handle GET request (e.g., display the verify page)
+        return render(request, 'verify.html')
+
     else:
         messages.error(request, 'Invalid form submission.')
         return render(request, 'verify.html')
@@ -218,7 +226,7 @@ def verify(request):
 def user_logout(request):
     logout(request)
     messages.success(request, "successfully logged out")
-    return redirect('signup')
+    return redirect('index')
 
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
@@ -231,8 +239,8 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, "Successfully Logged In")
-            return redirect('home')  # Redirect to the home page or any other desired page
+           # messages.success(request, "Successfully Logged In")
+            return redirect('dashboard')  # Redirect to the home page or any other desired page
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")
@@ -270,6 +278,18 @@ def signup(request):
             
             # Redirect the user to the appropriate page after sign up
             return redirect('verify')  # Replace 'verify' with the name of your verification page
+            my_user = User.objects.create_user(username=username, email=email, password=password)
+           # messages.success(request, "Account created successfully")
+
+            otp = generate_otp()
+
+            # Store OTP in the session
+            request.session['otp_sent_to_email'] = otp
+
+            # Call the email_alert function here passing the email address
+            email_alert("Welcome to Our Website", "Thank you for signing up!", email,otp)
+
+            return redirect('verify')
         else:
             messages.error(request, "Passwords don't match")
             return redirect('signup')
@@ -354,9 +374,9 @@ def calculate_Stocks_ema20(stock_symbol):
 
 @login_required
 def stocks(request):
-    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
-    unique_symbols = unique_symbols[:20]
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
 
+    symbols_to_remove = []
     result = []
     for stock_symbol in unique_symbols:
         # Get the current date
@@ -371,8 +391,14 @@ def stocks(request):
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
 
-        if not data_points:
+        if not data_points or not all(data_point[2] for data_point in data_points):
+            symbols_to_remove.append(stock_symbol)
             continue
+        
+        if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+            symbols_to_remove.append(stock_symbol)
+            continue
+        
         date_list=[]
 
         ema20_counter = calculate_Stocks_ema20(stock_symbol)
@@ -391,7 +417,8 @@ def stocks(request):
                     ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    print(date_list)
+    # print(date_list)
+    unique_symbols = [symbol for symbol in unique_symbols if symbol not in symbols_to_remove]
     current_path = resolve(request.path_info).url_name
     context = {
         'result': result,
@@ -400,8 +427,6 @@ def stocks(request):
         'current_path': current_path
     }
     return render(request, 'stocks.html', context)
-
-
 
 # def stocks(request):
     # # Get the distinct stock symbols
@@ -483,9 +508,9 @@ def calculate_ema20(stock_symbol):
 
 @login_required
 def sectors(request):
-    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
-    unique_symbols = unique_symbols[:20]
-
+    unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()[:20]
+    
+    symbols_to_remove = []
     result = []
     for stock_symbol in unique_symbols:
         # Get the current date
@@ -502,6 +527,11 @@ def sectors(request):
 
         if not data_points:
             continue
+        
+        if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+            symbols_to_remove.append(stock_symbol)
+            continue
+
         date_list=[]
 
         ema20_counter = calculate_ema20(stock_symbol)
@@ -522,6 +552,7 @@ def sectors(request):
 
     # print(date_list)
     current_path = resolve(request.path_info).url_name
+    unique_symbols = list(set(unique_symbols) - set(symbols_to_remove))
     context = {
         'result': result,
         'unique_symbols': unique_symbols,

@@ -10,11 +10,39 @@ from .models import SectorData, EmaCountsSector
 from django.db.models import Max
 from django.shortcuts import render
 from django.urls import resolve
+from django.http import JsonResponse
+import json
+
+from django.shortcuts import redirect
+from .models import stock_user
+
+def remove_from_watchlist(request):
+    if request.method == 'POST':
+        symbol_to_remove = request.POST.get('symbol')
+        
+        # Retrieve the StockUser instance for the current user
+        current_user = request.user  # Get the current authenticated user
+        stock_user_instance = stock_user.objects.get(username=current_user.username)
+        
+        # Parse watchlist_sector into a list of dictionaries
+        watchlist_data = json.loads(stock_user_instance.watchlist_sector)
+        
+        # Perform the removal logic
+        updated_watchlist_data = [entry for entry in watchlist_data if entry['symbol'] != symbol_to_remove]
+        
+        # Save the updated watchlist_sector back to the stock_user instance
+        stock_user_instance.watchlist_sector = json.dumps(updated_watchlist_data)
+        stock_user_instance.save()
+
+        return redirect('watchlist')  # Redirect back to the watchlist page
+
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from json.decoder import JSONDecodeError  # Import JSONDecodeError
 from .models import stock_user  # Import the stock_user model
+import json
+from django.core import serializers  # Import Django's built-in serializer
 import json
 
 @login_required
@@ -35,24 +63,30 @@ def fetch_sector_data(request):
             watchlist_sector = user.watchlist_sector
             if watchlist_sector:  # Check if watchlist_sector is not empty
                 try:
-                    watchlist_sector = json.loads(watchlist_sector)
-                except JSONDecodeError:
+                    # Parse existing JSON data
+                    watchlist_data = json.loads(watchlist_sector)
+                except json.JSONDecodeError:
                     # Handle invalid JSON data
-                    watchlist_sector = []
+                    watchlist_data = []
             else:
-                watchlist_sector = []
-            # Append the serialized data to the watchlist_sector
-            watchlist_sector.append(serialized_data)
-            # Save the updated watchlist_sector to the user
-            user.watchlist_sector = json.dumps(watchlist_sector)
-            user.save()
-            print(serialized_data)
-            return JsonResponse({'success': True, 'data': serialized_data})
+                watchlist_data = []
+            
+            # Check if symbol already exists in the watchlist
+            symbol_exists = any(entry['symbol'] == symbol for entry in watchlist_data)
+            if not symbol_exists:
+                # Append new data to the existing JSON data
+                watchlist_data.append(serialized_data)
+                # Convert the updated JSON data back to a string
+                user.watchlist_sector = json.dumps(watchlist_data)
+                user.save()
+                print(serialized_data)
+                return JsonResponse({'success': True, 'data': serialized_data})
+            else:
+                return JsonResponse({'success': False, 'message': 'Symbol already exists in the watchlist.'})
         except SectorData.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Sector data not found for the symbol.'})
     else:
         return JsonResponse({'success': False, 'message': 'Invalid request method.'})
-
 
 def watchlist(request):
     current_path = resolve(request.path_info).url_name
@@ -278,18 +312,6 @@ def signup(request):
             
             # Redirect the user to the appropriate page after sign up
             return redirect('verify')  # Replace 'verify' with the name of your verification page
-            my_user = User.objects.create_user(username=username, email=email, password=password)
-           # messages.success(request, "Account created successfully")
-
-            otp = generate_otp()
-
-            # Store OTP in the session
-            request.session['otp_sent_to_email'] = otp
-
-            # Call the email_alert function here passing the email address
-            email_alert("Welcome to Our Website", "Thank you for signing up!", email,otp)
-
-            return redirect('verify')
         else:
             messages.error(request, "Passwords don't match")
             return redirect('signup')

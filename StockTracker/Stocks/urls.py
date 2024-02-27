@@ -40,6 +40,12 @@ urlpatterns = [
     # path('logout/', views.logout_view, name='logout'),
     path('home_template/', views.home_temp, name='home_template'),
     path('stock_template/', views.stock_temp, name='stock_template'),
-]
+    path('watchlist/', views.watchlist, name='watchlist'),
+    path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
+    path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
+    path('remove-from-watchlist/', views.remove_from_watchlist, name='remove_from_watchlist'),
+    
+    ]
+
     # path('graph/<str:symbol>/<int:ema_value>/', views.graph, name='graph'),
 

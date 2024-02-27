@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -48,12 +49,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Stocks.apps.StocksConfig',
-    'django.contrib.sites',
-
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    
 ]
 
 MIDDLEWARE = [
@@ -125,6 +123,9 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend'
 ]
 
+AUTH_USER_MODEL = 'Stocks.stock_user'
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -148,28 +149,8 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Added Manually :
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static", # serve the files available inside static directory
+    os.path.join(BASE_DIR, 'static'),
 ]
-
-SITE_ID = 1
-
-#205524475510-krt63efbdoo8vqs1aodns8ltoasc00is.apps.googleusercontent.com
-#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
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'OAUTH_PKCE_ENABLED': True,
-    }
-}
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'user_login'
-CRISPY_TEMPLATE_PACK = 'bootstrap4'

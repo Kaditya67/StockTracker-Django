@@ -1,6 +1,35 @@
-# stockapp/models.py
-# from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class stock_user(AbstractUser):
+    username = models.CharField(max_length=50, unique=True)
+    password = models.CharField(max_length=50)
+    email = models.EmailField(unique=True)
+    watchlist_stock = models.TextField()
+    watchlist_sector = models.TextField()
+
+    class Meta:
+        # Define the app_label to avoid conflicts in migrations
+        app_label = 'Stocks'  # Replace 'your_app_name' with the actual name of your Django app
+
+    # Specify unique related names for groups and user_permissions fields
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='stock_user_groups',  # New related name for groups
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='stock_user_permissions',  # New related name for user_permissions
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+    )
+
+
 
 class ContactInformation(models.Model):
     name = models.CharField(max_length=255)

@@ -5,12 +5,94 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from .models import ContactInformation
 from django.contrib.auth.decorators import login_required
-
-# def sector_dashboard(request):
 from django.shortcuts import render
 from .models import SectorData, EmaCountsSector
 from django.db.models import Max
+from django.shortcuts import render
+from django.urls import resolve
+from django.http import JsonResponse
+import json
 
+from django.shortcuts import redirect
+from .models import stock_user
+
+def remove_from_watchlist(request):
+    if request.method == 'POST':
+        symbol_to_remove = request.POST.get('symbol')
+        
+        # Retrieve the StockUser instance for the current user
+        current_user = request.user  # Get the current authenticated user
+        stock_user_instance = stock_user.objects.get(username=current_user.username)
+        
+        # Parse watchlist_sector into a list of dictionaries
+        watchlist_data = json.loads(stock_user_instance.watchlist_sector)
+        
+        # Perform the removal logic
+        updated_watchlist_data = [entry for entry in watchlist_data if entry['symbol'] != symbol_to_remove]
+        
+        # Save the updated watchlist_sector back to the stock_user instance
+        stock_user_instance.watchlist_sector = json.dumps(updated_watchlist_data)
+        stock_user_instance.save()
+
+        return redirect('watchlist')  # Redirect back to the watchlist page
+
+
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from json.decoder import JSONDecodeError  # Import JSONDecodeError
+from .models import stock_user  # Import the stock_user model
+import json
+from django.core import serializers  # Import Django's built-in serializer
+import json
+
+@login_required
+def fetch_sector_data(request):
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol')
+        user = request.user  # Get the current logged-in user
+        try:
+            # Fetch the latest data for the symbol from the database
+            sector_data = SectorData.objects.filter(symbol=symbol).latest('date')
+            # Serialize the data dictionary
+            serialized_data = {
+                'date': sector_data.date.strftime('%Y-%m-%d'),
+                'symbol': sector_data.symbol,
+                'closing_price': float(sector_data.close_price),  # Convert Decimal to float
+            }
+            # Get the user's watchlist_sector
+            watchlist_sector = user.watchlist_sector
+            if watchlist_sector:  # Check if watchlist_sector is not empty
+                try:
+                    # Parse existing JSON data
+                    watchlist_data = json.loads(watchlist_sector)
+                except json.JSONDecodeError:
+                    # Handle invalid JSON data
+                    watchlist_data = []
+            else:
+                watchlist_data = []
+            
+            # Check if symbol already exists in the watchlist
+            symbol_exists = any(entry['symbol'] == symbol for entry in watchlist_data)
+            if not symbol_exists:
+                # Append new data to the existing JSON data
+                watchlist_data.append(serialized_data)
+                # Convert the updated JSON data back to a string
+                user.watchlist_sector = json.dumps(watchlist_data)
+                user.save()
+                print(serialized_data)
+                return JsonResponse({'success': True, 'data': serialized_data})
+            else:
+                return JsonResponse({'success': False, 'message': 'Symbol already exists in the watchlist.'})
+        except SectorData.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Sector data not found for the symbol.'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+def watchlist(request):
+    current_path = resolve(request.path_info).url_name
+    user = request.user
+    watchlist_sector = json.loads(user.watchlist_sector)
+    return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector})
 
 # Email
 
@@ -107,6 +189,8 @@ def dashboard(request):
     # return render(request, 'dashboard.html', {'current_path': current_path, 'context': context})
     return render(request, 'dashboard.html', context)
 
+from .models import FinancialData
+from .models import EmaCounts
 
 def symbols_and_ema_counts(request):
     """
@@ -165,6 +249,10 @@ def verify(request):
             messages.error(request, 'Incorrect OTP. Please try again.')
             return render(request, 'verify.html')
 
+    elif request.method == 'GET':
+        # Handle GET request (e.g., display the verify page)
+        return render(request, 'verify.html')
+
     else:
         messages.error(request, 'Invalid form submission.')
         return render(request, 'verify.html')
@@ -172,11 +260,11 @@ def verify(request):
 def user_logout(request):
     logout(request)
     messages.success(request, "successfully logged out")
-    return redirect('signup')
+    return redirect('index')
 
-from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
+from .models import stock_user  # Import your custom user model
 
 def user_login(request):
     if request.method == "POST":
@@ -185,7 +273,7 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, "Successfully Logged In")
+           # messages.success(request, "Successfully Logged In")
             return redirect('dashboard')  # Redirect to the home page or any other desired page
         else:
             print(f"Failed login attempt for user: {username}")
@@ -194,7 +282,6 @@ def user_login(request):
 
     return render(request, "user_login.html")
 
-
 def signup(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -202,15 +289,16 @@ def signup(request):
         password = request.POST['password1']
         confirm_password = request.POST['password2']
 
-        if User.objects.filter(username=username):
+        if stock_user.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists!')
+            return redirect('signup')
+
+        if password != confirm_password:
+            messages.error(request, "Passwords didn't match!")
             return redirect('signup')
 
         if len(username) > 10:
             messages.error(request, "Username too long! Must be 10 characters or less.")
-
-        if password != confirm_password:
-            messages.error(request, "Passwords didn't match!")
             return redirect('signup')
 
         if not username.isalnum():
@@ -218,18 +306,12 @@ def signup(request):
             return redirect('signup')
 
         if password == confirm_password:
-            my_user = User.objects.create_user(username=username, email=email, password=password)
+            # Create the user using your custom user model
+            my_user = stock_user.objects.create_user(username=username, email=email, password=password)
             messages.success(request, "Account created successfully")
-
-            otp = generate_otp()
-
-            # Store OTP in the session
-            request.session['otp_sent_to_email'] = otp
-
-            # Call the email_alert function here passing the email address
-            email_alert("Welcome to Our Website", "Thank you for signing up!", email,otp)
-
-            return redirect('verify')
+            
+            # Redirect the user to the appropriate page after sign up
+            return redirect('verify')  # Replace 'verify' with the name of your verification page
         else:
             messages.error(request, "Passwords don't match")
             return redirect('signup')
@@ -443,7 +525,7 @@ def calculate_ema20(stock_symbol):
                 ema20_counter = -1
             else:
                 ema20_counter -= 1
-    print(stock_symbol, ema20_counter)
+    #print(stock_symbol, ema20_counter)
     return ema20_counter
 
 @login_required
@@ -464,11 +546,8 @@ def sectors(request):
             symbol=stock_symbol,
             date__range=[start_date, current_date]
         ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
-        print("data_points---------------------------------------------")
-        # print(data_points)
-        
-        if not data_points or not all(data_point[2] for data_point in data_points):
-            symbols_to_remove.append(stock_symbol)
+
+        if not data_points:
             continue
         
         if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:

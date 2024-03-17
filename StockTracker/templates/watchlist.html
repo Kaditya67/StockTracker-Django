@@ -6,7 +6,8 @@
         <div class="table-responsive">
             <table id="watchlist-body" class="table table-striped table-bordered">
                 <thead class="thead-dark">
-                    <tr><th style="text-align:center;">Remove</th>
+                    <tr>
+                        <th style="text-align:center;">Remove</th>
                         <th style="text-align:center">Date</th>
                         <th style="text-align:center">Symbol</th>
                         <th style="text-align:center">Closing price</th>
@@ -14,29 +15,36 @@
                 </thead>
                 <tbody>
                     {% for record in watchlist_sector %}
-                    <tr>
-                        <td  class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
-                        <td>{{ record.date }}</td>
-                        <td>{{ record.symbol }}</td>
-                        <td>{{ record.closing_price }}</td>
-                    </tr>
+                        <tr>
+                            <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.symbol }}</td>
+                            <td>{{ record.closing_price }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% for record in watchlist_stock %}
+                        <tr>
+                            <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.symbol }}</td>
+                            <td>{{ record.closing_price }}</td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-</div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery library -->
-<script>
-    function removeFromWatchlist(symbol) {
-        document.getElementById('symbol_to_remove').value = symbol;
-        document.getElementById('remove_watchlist_form').submit();
-    }
-</script>
 
-<form id="remove_watchlist_form" method="post" action="{% url 'remove_from_watchlist' %}">
-    {% csrf_token %}
-    <input type="hidden" id="symbol_to_remove" name="symbol">
-</form>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery library -->
+    <script>
+        function removeFromWatchlist(symbol) {
+            document.getElementById('symbol_to_remove').value = symbol;
+            document.getElementById('remove_watchlist_form').submit();
+        }
+    </script>
 
+    <form id="remove_watchlist_form" method="post" action="{% url 'remove_from_watchlist' %}">
+        {% csrf_token %}
+        <input type="hidden" id="symbol_to_remove" name="symbol">
+    </form>
 {% endblock %}

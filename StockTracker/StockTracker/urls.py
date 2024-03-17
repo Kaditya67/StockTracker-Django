@@ -17,12 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 
-admin.site.site_header="StockTracker Admin"
-admin.site.site_title="StockTracker Admin Portal"
-admin.site.index_title="StockTracker to Aditya's Portfolio"
+# admin.site.site_header="StockTracker Admin"
+# admin.site.site_title="StockTracker Admin Portal"
+# admin.site.index_title="StockTracker to Aditya's Portfolio"
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('',include('Stocks.urls')),
+    path('admin/', include('customadmin.urls')),
+
     path('accounts/', include('allauth.urls')),
+    path('dj-admin/', admin.site.urls),
 ]

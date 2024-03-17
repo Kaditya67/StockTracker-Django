@@ -1,4 +1,5 @@
 from django.urls import path
+from django.shortcuts import resolve_url
 from . import views
 
 urlpatterns = [
@@ -41,8 +42,9 @@ urlpatterns = [
     path('home_template/', views.home_temp, name='home_template'),
     path('stock_template/', views.stock_temp, name='stock_template'),
     path('watchlist/', views.watchlist, name='watchlist'),
+    # path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
     path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
-    path('fetch-sector-data/', views.fetch_sector_data, name='fetch_sector_data'),
+     path('fetch_stock_data/', views.fetch_stock_data, name='fetch_stock_data'),
     path('remove-from-watchlist/', views.remove_from_watchlist, name='remove_from_watchlist'),
     
     ]

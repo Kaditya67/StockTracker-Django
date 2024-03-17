@@ -10,10 +10,6 @@
   <img src="{% static 'images/alerts.png' %}" alt="Logo" style="max-width: 110%; max-height: 110%;">
 </button>
 
-
-
-
-
 <div class="container mt-5">
   <div class="card">
     <div class="card-header">
@@ -98,7 +94,7 @@
       {% endif %}
       <form method="GET" action="{% url 'dashboard' %}">
         <span class="select" style="border:2px solid #6c757d;background:#6c757d;color:white;padding:7px;border-radius:8px">
-          <label for="selected_ema"></label>
+          <label for="selected_ema">Choose : </label>
           <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#6c757d;border-radius:8px;color:white">
             <option value="20" {% if selected_ema == '20' %}selected{% endif %}>Ema 20</option>
             <option value="50" {% if selected_ema == '50' %}selected{% endif %}>Ema 50</option>
@@ -116,7 +112,7 @@
   <div class="graph-container">
   <div class="card">
     <div class="card-header">
-      Number of Days since the Sectors are up or down
+      Number of Days since the Sectors are up or down compared to Nifty50
     </div>
     <br>
     <div class="container">
@@ -136,12 +132,12 @@
     var sectorChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: [{% for sector in sector_data %}'{{ sector.symbol }}',{% endfor %}],
+        labels: [{% for sector in sector_data|slice:"-1" %}'{{ sector.symbol }}',{% endfor %}],
         datasets: [{
           label: 'RS Output Value',
-          data: [{% for rs_value in rs_values %}{{ rs_value }},{% endfor %}],
-          backgroundColor: [{% for rs_value in rs_values %}{% if rs_value > 0 %}'rgba(0, 255, 0, 0.2)',{% else %}'rgba(255, 0, 0, 0.2)',{% endif %}{% endfor %}],
-          borderColor: [{% for rs_value in rs_values %}{% if rs_value > 0 %}'rgba(0, 255, 0, 1)',{% else %}'rgba(255, 0, 0, 1)',{% endif %}{% endfor %}],
+          data: [{% for rs_value in rs_values|slice:"-1" %}{{ rs_value }},{% endfor %}],
+          backgroundColor: [{% for rs_value in rs_values|slice:"-1" %}{% if rs_value > 0 %}'rgba(0, 255, 0, 0.2)',{% else %}'rgba(255, 0, 0, 0.2)',{% endif %}{% endfor %}],
+          borderColor: [{% for rs_value in rs_values|slice:"-1" %}{% if rs_value > 0 %}'rgba(0, 255, 0, 1)',{% else %}'rgba(255, 0, 0, 1)',{% endif %}{% endfor %}],
           borderWidth: 1
         }]
       },
@@ -193,12 +189,12 @@
       <table class="table table-bordered table-striped" id="interactive-table">
         <thead>
           <tr>
-            <th style="width: 16.66%;">Sector</th>
-            <th style="width: 16.66%;">EMA 20</th>
-            <th style="width: 16.66%;">EMA 50</th>
-            <th style="width: 16.66%;">EMA 100</th>
-            <th style="width: 16.66%;">EMA 200</th>
-            <th style="width: 16.66%;">RSI</th>
+            <th style="width: 16.66%;background-color: #343a3f;">Sector</th>
+            <th style="width: 16.66%;background-color: #343a3f;">EMA 20</th>
+            <th style="width: 16.66%;background-color: #343a3f;">EMA 50</th>
+            <th style="width: 16.66%;background-color: #343a3f;">EMA 100</th>
+            <th style="width: 16.66%;background-color: #343a3f;">EMA 200</th>
+            <th style="width: 16.66%;background-color: #343a3f;">RSI</th>
           </tr>
         </thead>
         <tbody>

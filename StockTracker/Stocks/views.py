@@ -22,7 +22,11 @@ def remove_from_watchlist(request):
         
         # Retrieve the StockUser instance for the current user
         current_user = request.user  # Get the current authenticated user
-        stock_user_instance = stock_user.objects.get(username=current_user.username)
+        try:
+            stock_user_instance = stock_user.objects.get(owner=current_user)
+        except stock_user.DoesNotExist:
+            # Handle case where StockUser instance does not exist for the user
+            return redirect('watchlist')  # Redirect back to the watchlist page
         
         # Parse watchlist_sector into a list of dictionaries
         watchlist_data = json.loads(stock_user_instance.watchlist_sector)
@@ -88,11 +92,67 @@ def fetch_sector_data(request):
     else:
         return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from .models import FinancialData
+import json
+
+
+@login_required
+def fetch_stock_data(request):
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol')
+        user = request.user
+
+        try:
+            stock_data = FinancialData.objects.filter(symbol=symbol).latest('date')
+        except FinancialData.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Stock data not found for the symbol.'})
+
+        serialized_data = {
+            'date': stock_data.date.strftime('%Y-%m-%d'),
+            'symbol': stock_data.symbol,
+            'closing_price': float(stock_data.close_price),
+        }
+
+        try:
+            watchlist_stock = json.loads(user.watchlist_stock)
+        except (json.JSONDecodeError, AttributeError):
+            watchlist_stock = []
+
+        symbol_exists = any(entry['symbol'] == symbol for entry in watchlist_stock)
+        if not symbol_exists:
+            watchlist_stock.append(serialized_data)
+            user.watchlist_stock = json.dumps(watchlist_stock)
+            user.save()
+            return JsonResponse({'success': True, 'data': serialized_data})
+        else:
+            return JsonResponse({'success': False, 'message': 'Symbol already exists in the watchlist.'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+# def watchlist(request):
+#     current_path = resolve(request.path_info).url_name
+#     user = request.user
+#     watchlist_sector = json.loads(user.watchlist_sector)
+#     current_path = resolve(request.path_info).url_name
+#     return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector, 'current_path': current_path})
+from django.shortcuts import resolve_url 
+
+@login_required
 def watchlist(request):
+    try:
+        watchlist_sector = json.loads(request.user.watchlist_sector)
+    except (json.JSONDecodeError, AttributeError):
+        watchlist_sector = []
+
+    try:
+        watchlist_stock = json.loads(request.user.watchlist_stock)
+    except (json.JSONDecodeError, AttributeError):
+        watchlist_stock = []
+
     current_path = resolve(request.path_info).url_name
-    user = request.user
-    watchlist_sector = json.loads(user.watchlist_sector)
-    return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector})
+    return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector, 'watchlist_stock': watchlist_stock, 'current_path': current_path})
 
 # Email
 

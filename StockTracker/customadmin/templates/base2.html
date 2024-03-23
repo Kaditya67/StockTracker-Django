@@ -5,71 +5,10 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}My Site{% endblock %}</title>
+  <title>StockTracker | {% block title %}{% endblock title %}</title>
   {% load static %}
   <link rel="icon" href="{% static 'images/logo1.png' %}" type="image/png">
   <style>
-    /* Basic CSS for the navigation bar */
-    .navbar ul {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: var(--primary-color-light); /* Set initial background color */
-        transition: var(--tran-05);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow effect */
-    }
-
-    .navbar li {
-        float:right;
-    }
-
-    .navbar h2 {
-        color: var(--text-color);
-    }
-    
-
-    .navbar li a {
-        display: block;
-        color: var(--text-color)
-        text-align: center;
-        {% comment %} padding-right: 30px; {% endcomment %}
-        {% comment %} padding-left:30px; {% endcomment %}
-        padding-top:12px;
-        padding-bottom:12px;
-        border-radius:88px;
-        text-decoration: none;
-        transition: var(--tran-03);
-    }
-
-    /* Change the link color to indicate the current page */
-    .navbar li a:hover {
-      {% comment %} background-color: var(--primary-color); {% endcomment %}
-      color:var(--primary-color);
-
-    }
-
-    /* Navbar in dark mode */
-    body.dark .navbar ul{
-        background-color: #020509; /* Change background color in dark mode */
-    }
-
-    /* Text color for navbar links in dark mode */
-    body.dark .navbar a {
-        color: var(--text-color); /* Change text color in dark mode */
-    }
-
-    body.dark .navbar h2 {
-        color: var(--text-color); /* Change text color in dark mode */
-    }
-
-    /* Hover styles for navbar links in dark mode */
-    body.dark .navbar a:hover {
-        color: var(--primary-color-toggle);
-        {% comment %} color:var(--primary-color) {% endcomment %}
-    }
-
-    
     /* Google Font Import - Poppins */
     @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
@@ -89,6 +28,8 @@
       --primary-color-light: #f6f5ff;
       --toggle-color: #ddd;
       --text-color: #707070;
+      --logo-color:#707070;
+      --dropdown-color: #000;
 
       /* ====== Transition ====== */
       --tran-03: all 0.2s ease;
@@ -108,14 +49,31 @@
       color: #fff;
     }
 
-    body.dark {
+    {% comment %} body.dark {
+      --logo-color:#fff;
       --body-color: #18191a;
       --sidebar-color: #242526;
       --primary-color: #3a3b3c;
       --primary-color-light: #3a3b3c;
       --toggle-color: #fff;
       --primary-color-toggle: #695cfe;
-      --text-color: #ccc;
+      --text-color: #18191a;
+    } {% endcomment %}
+
+    body.dark {
+      --logo-color: #fff;
+      --body-color: #0d1822;
+      --sidebar-color: #242526;
+      --primary-color: #3a3b3c;
+      --primary-color-light: #3a3b3c;
+      --toggle-color: #fff;
+      --primary-color-toggle: #695cfe;
+      --text-color: #000; /* Change text color to white */
+      --dropdown-color: #fff;
+    }
+
+    body.dark .sidebar li a {
+      color: #fff; /* Adjust text color for anchor tags in dark mode */
     }
 
     /* ===== Sidebar ===== */
@@ -163,7 +121,7 @@
 
     .sidebar .text,
     .sidebar .icon {
-      color: var(--text-color);
+      color: var(--logo-color);
       transition: var(--tran-03);
     }
 
@@ -374,7 +332,6 @@
 
     body.dark .switch::before {
       left: 20px;
-
     }
 
     .home {
@@ -393,6 +350,7 @@
       color: var(--text-color);
       padding: 12px 60px;
     }
+    
     .home .content {
       font-size: 12px;
       {% comment %} font-weight: 500; {% endcomment %}
@@ -415,6 +373,16 @@
     body.dark .home .text {
       color: var(--text-color);
     }
+
+    .sidebar .menu-links .nav-link.active a {
+      background-color: var(--primary-color); /* Background color for active tab */
+    }
+    
+    .sidebar .menu-links .nav-link.active .icon,
+    .sidebar .menu-links .nav-link.active .nav-text {
+      color: var(--sidebar-color); /* Text color for active tab */
+    }    
+    
   </style>
 
   <!----===== Boxicons CSS ===== -->
@@ -440,41 +408,37 @@
 
     <div class="menu-bar">
       <div class="menu">
-        <li class="search-box">
-          <i class='bx bx-search icon'></i>
-          <input type="text" placeholder="Search Features">
-        </li>
-
+        
         <ul class="menu-links">
-          <li class="nav-link">
+          <li class="nav-link {% if current_path == 'admin_dashboard' %}active{% endif %}">
             <a href="{% url 'admin_dashboard' %}">
-              <i class='bx bx-home-alt icon'></i>
-              <span class="textdis nav-text">Dashboard</span>
+                <i class='bx bx-home-alt icon'></i>
+                <span class="textdis nav-text">Dashboard</span>
             </a>
-          </li>
+        </li>        
 
-          <li class="nav-link">
+        <li class="nav-link {% if current_path == 'financial_data' %}active{% endif %}">
             <a href="{% url 'financial_data' %}">
               <i class='bx bx-bar-chart-alt-2 icon'></i>
               <span class="textdis nav-text">Financial Data</span>
             </a>
           </li>
 
-          <li class="nav-link">
+          <li class="nav-link {% if current_path == 'sector_data' %}active{% endif %}">
             <a href="{% url 'sector_data'%}">
               <i class='bx bx-bell icon'></i>
               <span class="textdis nav-text">Sector Data</span>
             </a>
           </li>
 
-          <li class="nav-link">
+          <li class="nav-link {% if current_path == 'ema_counts_sectors' %}active{% endif %}">
             <a href="{% url 'ema_counts_sectors' %}">
               <i class='bx bx-pie-chart-alt icon'></i>
               <span class="textdis nav-text">Sector Ema</span>
             </a>
           </li>
  
-          <li class="nav-link">
+          <li class="nav-link {% if current_path == 'ema_counts_stocks' %}active{% endif %}">
             <a href="{% url "ema_counts_stocks" %}">
               <i class='bx bx-heart icon'></i>
               <span class="textdis nav-text">Stock Ema</span>
@@ -500,7 +464,7 @@
         </li>
 
         <li class="mode">
-          <div class="sun-moon">
+          <div  class="sun-moon">
             <i class='bx bx-moon icon moon'></i>
             <i class='bx bx-sun icon sun'></i>
           </div>
@@ -515,28 +479,20 @@
   </nav>
 
   <section class="home">
-    <div class="navbar">
-      <ul>
-        <h2 style="text-align:center;padding-top:20px;padding-bottom:20px;">Admin Panel</h2>
-  </div>
-  <div class="body_content">
-    {% block content %}
-    {% endblock content %}
-</div>
+    <div class="body_content">
+      {% block content %}
+      {% endblock content %}
+    </div>
   </section>
 
   <script>
     const body = document.querySelector('body'),
       sidebar = body.querySelector('nav'),
       toggle = body.querySelector(".toggle"),
-      searchBtn = body.querySelector(".search-box"),
       modeSwitch = body.querySelector(".toggle-switch"),
       modeText = body.querySelector(".mode-text");
     toggle.addEventListener("click", () => {
       sidebar.classList.toggle("close");
-    })
-    searchBtn.addEventListener("click", () => {
-      sidebar.classList.remove("close");
     })
     modeSwitch.addEventListener("click", () => {
       body.classList.toggle("dark");

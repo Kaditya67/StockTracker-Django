@@ -22,14 +22,14 @@
                             <td>{{ record.closing_price }}</td>
                         </tr>
                     {% endfor %}
-                    {% for record in watchlist_stock %}
+                    {% comment %} {% for record in watchlist_stock %}
                         <tr>
                             <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
                             <td>{{ record.date }}</td>
                             <td>{{ record.symbol }}</td>
                             <td>{{ record.closing_price }}</td>
                         </tr>
-                    {% endfor %}
+                    {% endfor %} {% endcomment %}
                 </tbody>
             </table>
         </div>

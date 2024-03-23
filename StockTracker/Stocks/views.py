@@ -23,7 +23,7 @@ def remove_from_watchlist(request):
         # Retrieve the StockUser instance for the current user
         current_user = request.user  # Get the current authenticated user
         try:
-            stock_user_instance = stock_user.objects.get(owner=current_user)
+            stock_user_instance = stock_user.objects.get(username=current_user.username)
         except stock_user.DoesNotExist:
             # Handle case where StockUser instance does not exist for the user
             return redirect('watchlist')  # Redirect back to the watchlist page
@@ -39,6 +39,7 @@ def remove_from_watchlist(request):
         stock_user_instance.save()
 
         return redirect('watchlist')  # Redirect back to the watchlist page
+
 
 
 from django.contrib.auth.decorators import login_required
@@ -116,14 +117,14 @@ def fetch_stock_data(request):
         }
 
         try:
-            watchlist_stock = json.loads(user.watchlist_stock)
+            watchlist_sector = json.loads(user.watchlist_sector)
         except (json.JSONDecodeError, AttributeError):
-            watchlist_stock = []
+            watchlist_sector = []
 
-        symbol_exists = any(entry['symbol'] == symbol for entry in watchlist_stock)
+        symbol_exists = any(entry['symbol'] == symbol for entry in watchlist_sector)
         if not symbol_exists:
-            watchlist_stock.append(serialized_data)
-            user.watchlist_stock = json.dumps(watchlist_stock)
+            watchlist_sector.append(serialized_data)
+            user.watchlist_sector = json.dumps(watchlist_sector)
             user.save()
             return JsonResponse({'success': True, 'data': serialized_data})
         else:

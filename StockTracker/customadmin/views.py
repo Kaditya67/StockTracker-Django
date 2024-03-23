@@ -24,9 +24,20 @@ def admin_login(request):
 
     return render(request, 'login.html')
 
+
+# views.py
+from django.shortcuts import render
+from Stocks.models import FinancialData, SectorData
+
 def admin_dashboard(request):
+    latest_financial_data = FinancialData.objects.order_by('-date').first()
+    latest_sector_data = SectorData.objects.order_by('-date').first()
     current_path = resolve(request.path_info).url_name
-    context = {'current_path': current_path}
+    context = {
+        'latest_financial_data': latest_financial_data,
+        'latest_sector_data': latest_sector_data,
+        'current_path': current_path
+    }
     return render(request, 'admindashboard.html', context)
 
 def ema_counts_sectors(request):

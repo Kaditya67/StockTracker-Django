@@ -2,17 +2,56 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Output</title>
+    <title>{{ name }} | Analyze Closing vs EMA Output</title>
+    <style>
+        /* Define CSS styles for the table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
-    <h1>Analysis Output</h1>
+    <h1>{{ name }} Analyze Closing vs EMA Output</h1>
 
-    {% if starting_counter is not None %}
-        <p>Starting Counter Value: {{ starting_counter }}</p>
-    {% else %}
-        <p>No data available for analysis.</p>
-    {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>Stock Symbol</th>
+                <th>Newest Date</th>
+                <th>EMA 20 Output</th>
+                <th>EMA 50 Output</th>
+                <th>EMA 100 Output</th>
+                <th>EMA 200 Output</th>
+                <th>RSI Output</th>
+                <th>RS Output</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in result_list %}
+                <tr>
+                    <td>{{ result.stock_data.symbol }}</td>
+                    <td>{{ result.stock_data.date }}</td>
+                    <td>{{ result.ema20_output }}</td>
+                    <td>{{ result.ema50_output }}</td>
+                    <td>{{ result.ema100_output }}</td>
+                    <td>{{ result.ema200_output }}</td>
+                    <td>{{ result.rsi_output }}</td>
+                    <td>{{ result.rs_output }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>

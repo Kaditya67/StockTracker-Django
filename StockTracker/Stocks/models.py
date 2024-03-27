@@ -2,10 +2,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-class stock_user(AbstractUser):
+class stock_user(AbstractUser):  # Asad code Do not touch!!!!!!
     username = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=50)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=False)
     watchlist_sector = models.TextField()
 
     class Meta:

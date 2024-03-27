@@ -305,34 +305,33 @@
     </div>
 
     <div class="content-container">
-        <div id="settingsContent">
-            <!-- Content for Settings -->
-
-      <div class="accordion" id="accordionExample">
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingOne">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-        Create Alert On
-      </button>
-    </h2>
-    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample" >
-      <div class="accordion-body">
-          <div class="accordion-body">
-    <ul>
-        <h6>NIFTY</h6>
-        <hr>
-        <h6>Bank</h6>
-        <hr>
-        <h6>Sensex</h6>
-        <hr>
-        <h6>S&P</h6>
-    </ul>
-</div>
-
+      <div id="settingsContent">
+          <!-- Content for Settings -->
+  
+          <div class="accordion" id="accordionExample">
+              <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingOne">
+                      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                          Create Alert On
+                      </button>
+                  </h2>
+                  <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                      <div class="accordion-body">
+                          <select class="form-select">
+                              {% for sector in sector_data %}
+                              <option value="{{ sector.symbol }}">{{ sector.symbol[1:] }}</option>
+                              {% endfor %}
+                              {% for symbol in unique_symbols %}
+                              <option value="{{ symbol }}">{{ symbol }}</option>
+                              {% endfor %}
+                          </select>
+                      </div>
+                  </div>
+              </div>
+          </div>
       </div>
-    </div>
   </div>
-  <div class="accordion-item">
+    <div class="accordion-item">
     <h2 class="accordion-header" id="headingTwo">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
         Select Trend

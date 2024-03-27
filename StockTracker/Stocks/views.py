@@ -217,7 +217,8 @@ def dashboard(request):
     """
     # Get the latest date for each stock
     latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
-    
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
+
     sector_data = []
     ema_counts = []
     rs_values = []
@@ -237,6 +238,7 @@ def dashboard(request):
     
     context = {
         'sector_data': sector_data,
+        'unique_symbols': unique_symbols,
         'ema_counts': ema_counts,
         'rs_values': rs_values,
         'symbols': symbols,

@@ -369,7 +369,12 @@ def signup(request):
         if password == confirm_password:
             # Create the user using your custom user model
             my_user = stock_user.objects.create_user(username=username, email=email, password=password)
-            messages.success(request, "Account created successfully")
+          #  messages.success(request, "Account created successfully")
+            otp = generate_otp()
+
+            request.session['otp_sent_to_email'] = otp
+
+            email_alert("welcome to our website","thank you for signing up!",email,otp)
             
             # Redirect the user to the appropriate page after sign up
             return redirect('verify')  # Replace 'verify' with the name of your verification page

@@ -37,6 +37,7 @@ EMAIL_HOST_PASSWORD = 'your_password'
 ALLOWED_HOSTS = []
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'customadmin',
+    
 ]
 
 MIDDLEWARE = [
@@ -98,6 +100,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
 
 
 # Password validation
@@ -155,6 +159,18 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+# Import necessary module
+from datetime import timedelta
+
+# Celery beat schedule configuration
+CELERY_BEAT_SCHEDULE = {
+    'send_watchlist_notifications_task': {
+        'task': 'Stocks.tasks.send_watchlist_notifications',
+        'schedule': timedelta(hours=1),  # Adjust the interval as needed
+    },
+}
+
 
 ########### Admin Panel ############
 JAZZMIN_SETTINGS = {

@@ -51,8 +51,9 @@
                                     url: '{% url "watchlist" %}',
                                     type: 'GET',
                                     success: function(data) {
-                                        alert("Sector added successfully to watchlist")
-                                        
+                                        alert("Sector added successfully to watchlist");
+                                        // Trigger email sending process
+                                        sendWatchlistEmail();
                                     },
                                     error: function(xhr, status, error) {
                                         alert('Failed to Sector to watchlist. Please try again.');
@@ -66,9 +67,23 @@
                             alert('An error occurred while processing your request. Please try again.');
                         }
                     });
-                    
                 });
             });
+        
+            // Function to trigger email sending process
+            function sendWatchlistEmail() {
+                $.ajax({
+                    url: '{% url "send_watchlist_email" %}',
+                    type: 'GET',
+                    success: function(data) {
+                        alert("Email sent successfully.");
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Failed to send email. Please try again.');
+                    }
+                });
+            }
         </script>
+        
         
     {% endblock %}

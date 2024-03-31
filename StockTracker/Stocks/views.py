@@ -12,9 +12,11 @@ from django.shortcuts import render
 from django.urls import resolve
 from django.http import JsonResponse
 import json
+from django.template.loader import render_to_string
 
 from django.shortcuts import redirect
 from .models import stock_user
+
 
 def remove_from_watchlist(request):
     if request.method == 'POST':
@@ -47,6 +49,73 @@ from .models import stock_user  # Import the stock_user model
 import json
 from django.core import serializers  # Import Django's built-in serializer
 import json
+
+def send_watchlist_email(user):
+    try:
+        # Fetch the user's watchlist_sector
+        watchlist_sector = user.watchlist_sector
+        if watchlist_sector:  # Check if watchlist_sector is not empty
+            try:
+                # Parse existing JSON data
+                watchlist_data = json.loads(watchlist_sector)
+            except json.JSONDecodeError:
+                # Handle invalid JSON data
+                watchlist_data = []
+        else:
+            watchlist_data = []
+
+        if watchlist_data:
+            email_subject = "Watchlist Update"
+            email_body = """
+            <html>
+            <head></head>
+            <body>
+                <h2>Your watchlist has been updated:</h2>
+                <table border="1">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Close Price</th>
+                        <th>Date</th>
+                    </tr>
+            """
+
+            # Add each symbol to the table body
+            for entry in watchlist_data:
+                symbol = entry.get('symbol', '')
+                closing_price = entry.get('closing_price', '')
+                date = entry.get('date', '')
+
+                if symbol and closing_price and date:
+                    email_body += f"""
+                    <tr>
+                        <td>{symbol}</td>
+                        <td>{closing_price}</td>
+                        <td>{date}</td>
+                    </tr>
+                    """
+
+            email_body += """
+                </table>
+                <p>To know more about your stocks and sectors, click <a href="http://127.0.0.1:8000/watchlist/">here</a>.</p>
+            </body>
+            </html>
+            """
+
+            # Get the user's email address
+            email_to = user.email
+
+            # Send email
+            email_watchlist(email_subject, email_body, [email_to])
+
+            print("Email sent successfully to", email_to)
+        else:
+            print("Watchlist is empty. No email sent.")
+    except Exception as e:
+        print("Error sending watchlist email:", str(e))
+
+
+
+
 
 @login_required
 def fetch_sector_data(request):
@@ -83,6 +152,7 @@ def fetch_sector_data(request):
                 user.watchlist_sector = json.dumps(watchlist_data)
                 user.save()
                 print(serialized_data)
+                send_watchlist_email(user)
                 return JsonResponse({'success': True, 'data': serialized_data})
             else:
                 return JsonResponse({'success': False, 'message': 'Symbol already exists in the watchlist.'})
@@ -175,7 +245,7 @@ from email.mime.text import MIMEText
 import random
 import string
 from django.urls import reverse
-from .email_alerts import email_alert
+from .email_alerts import email_alert, email_watchlist
 from .utils import generate_otp
 from .email_alerts import email_password
 

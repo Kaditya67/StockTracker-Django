@@ -13,6 +13,7 @@ urlpatterns = [
     path('alerts/', views.alerts, name='alerts'),
     path('signup/',views.signup,name="signup"),
     path('forgotpassword/',views.forgetpassword,name="forgetpassword"),
+    path('send_watchlist_email/',views.send_watchlist_email, name='send_watchlist_email'),
     # path('home/',views.home,name="home"),
     path('stocks/', views.stocks, name='stocks'),
     path('sectors/', views.sectors, name='sectors'),

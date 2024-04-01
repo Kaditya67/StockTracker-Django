@@ -114,10 +114,6 @@ def send_watchlist_email(user):
         print("Error sending watchlist email:", str(e))
 
 
-
-
-
-@login_required
 def fetch_sector_data(request):
     if request.method == 'POST':
         symbol = request.POST.get('symbol')

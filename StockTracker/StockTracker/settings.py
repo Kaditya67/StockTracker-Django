@@ -34,7 +34,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'your_email@gmail.com'  # Replace with your Gmail email
 EMAIL_HOST_PASSWORD = 'your_password'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 

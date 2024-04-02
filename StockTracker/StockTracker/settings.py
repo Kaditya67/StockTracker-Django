@@ -148,6 +148,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Set the login redirect URL
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

@@ -275,7 +275,8 @@ def verify_password(request):
             messages.error(request, "Invalid email address or username.")
 
     return render(request, 'verify_password.html')
-    
+
+@login_required
 def dashboard(request):
     """
     A view function to render the dashboard page with the latest data for each stock.
@@ -356,6 +357,7 @@ def index(request):
         
 ## User logout and verify
 
+@login_required
 def subscription(request):
     return render(request, 'subscription.html')
 

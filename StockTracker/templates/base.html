@@ -49,7 +49,7 @@
     <style>
       #toggleButton {
         position: absolute;
-        left: 150px; /* Adjust the value based on the sidebar width */
+        left: 149px; /* Adjust the value based on the sidebar width */
         top: 5px; /* Adjust the value based on the desired vertical position */
         border-radius: 0rem;
       }
@@ -234,7 +234,7 @@
         onclick="toggleSidebar()"
         class="btn btn-primary"
         id="toggleButton"
-        style="background-color: #695cfe"
+        style="background-color: #343a40"
       >
         <i class="fas fa-bars"></i>
       </button>
@@ -250,17 +250,19 @@
               <span class="nav-text">Home</span>
             </a>
           </li>
-
-          <!-- Portfolio -->
+          <!-- Performance tab -->
           <li
-            class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"
+            class="nav-item {% if current_path == 'graph'%}active{% endif %}"
           >
-            <a class="nav-link text-light" href="{% url 'portfolio' %}">
-              <i class="fas fa-briefcase"></i>
-              <span class="nav-text">Portfolio</span>
+            <a
+              class="nav-link text-light"
+              href="{% url 'graph' symbol='TATAMOTORS.NS' ema_value=20 %}"
+            >
+            <i class="fa fa-bar-chart"></i>
+              <span class="nav-text">Charts</span>
             </a>
           </li>
-
+          
           <!-- Sectors -->
           <li
             class="nav-item {% if current_path == 'sectors' %}active{% endif %}"
@@ -280,6 +282,15 @@
               <span class="nav-text">Stocks</span>
             </a>
           </li>
+          <!-- Portfolio -->
+          <li
+            class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'portfolio' %}">
+              <i class="fas fa-briefcase"></i>
+              <span class="nav-text">Portfolio</span>
+            </a>
+          </li>
 
           <!-- Settings -->
           <li
@@ -295,7 +306,7 @@
           >
             <a class="nav-link text-light" href="{% url 'watchlist' %}">
               <i class="fa-regular fa-square-plus"></i>
-              <span class="nav-text">watchlist</span>
+              <span class="nav-text">Watchlist</span>
             </a>
           </li>
           <!-- Help -->
@@ -313,19 +324,6 @@
             <a class="nav-link text-light" href="{% url 'about' %}">
               <i class="fas fa-paper-plane"></i>
               <span class="nav-text">About Us</span>
-            </a>
-          </li>
-
-          <!-- Performance tab -->
-          <li
-            class="nav-item {% if current_path == 'graph'%}active{% endif %}"
-          >
-            <a
-              class="nav-link text-light"
-              href="{% url 'graph' symbol='TATAMOTORS.NS' ema_value=20 %}"
-            >
-            <i class="fa fa-bar-chart"></i>
-              <span class="nav-text">Charts</span>
             </a>
           </li>
           <br> 
@@ -422,7 +420,7 @@
               button.classList.add("collapsed");
             });
         } else {
-          toggleButton.style.left = "150px"; // Adjust the value based on the expanded sidebar width
+          toggleButton.style.left = "149px"; // Adjust the value based on the expanded sidebar width
           document
             .querySelectorAll(".logout-button")
             .forEach(function (button) {
@@ -474,17 +472,17 @@
         // Call the function to display the welcome box
         window.onload = displayWelcomeBox;
     </script>
-  <script>
-    function confirmLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-            // If user confirms, submit the logout form
-            document.getElementById("logout-form").submit();
-        } else {
-            // If user cancels, do nothing
-            return false;
-        }
-    }
-</script>
+    <script>
+      function confirmLogout() {
+          if (confirm("Are you sure you want to logout?")) {
+              // If user confirms, submit the logout form
+              document.getElementById("logout-form").submit();
+          } else {
+              // If user cancels, do nothing
+              return false;
+          }
+      }
+  </script>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

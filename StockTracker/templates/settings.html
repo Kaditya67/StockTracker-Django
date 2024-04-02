@@ -23,6 +23,8 @@
                             <div class="form-group">
                                 <label for="password">Password</label>
                                 <input type="password" class="form-control" id="password" placeholder="Password">
+                                <label for="password">Confirm Password</label>
+                                <input type="password" class="form-control" id="password" placeholder="Password">
                             </div>
                             <button type="submit" class="btn btn-primary">Update Profile</button>
                         </form>
@@ -52,6 +54,24 @@
                             <button type="submit" class="btn btn-primary">Save Settings</button>
                         </form>
                     </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mt-5">
+                    <div class="card-header">
+                        <h4>Ema Alerts Settings</h4>
+                    </div>
+                    <form method="GET" action="{% url 'dashboard' %}" style="padding:10px">
+                        <span class="select" style="border:2px solid #0d6efd;background:#0d6efd;color:white;padding:7px;border-radius:8px;">
+                          <label for="selected_ema">Choose : </label>
+                          <select name="ema" id="selected_ema" onchange="this.form.submit()" style="background-color:#0d6efd;border-radius:8px;color:white;">
+                            <option value="20" {% if selected_ema == '20' %}selected{% endif %}>Ema 20</option>
+                            <option value="50" {% if selected_ema == '50' %}selected{% endif %}>Ema 50</option>
+                            <option value="100" {% if selected_ema == '100' %}selected{% endif %}>Ema 100</option>
+                            <option value="200" {% if selected_ema == '200' %}selected{% endif %}>Ema 200</option>
+                          </select>
+                        </span>
+                      </form>
                 </div>
             </div>
         </div>

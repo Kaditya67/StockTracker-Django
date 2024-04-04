@@ -34,7 +34,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  {% comment %} <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous"> {% endcomment %}
 
     <link
       rel="stylesheet"
@@ -176,7 +176,7 @@
       }
 
       .nav-item.active {
-        background-color: #ffc0cb;
+        background-color: #dc3545;
         /* Add your desired color */
         color: #f00;
         /* Add your desired text color */
@@ -220,6 +220,11 @@
       color: #fff; /* Change text color to white */
   }
 
+  /* Remove alternating background color for even rows */
+    .table-striped tbody tr:nth-of-type(2n) {
+        background-color: transparent;
+    }
+    
     </style>
   </head>
   <body>

@@ -7,7 +7,9 @@ class stock_user(AbstractUser):  # Asad code Do not touch!!!!!!
     password = models.CharField(max_length=50)
     email = models.EmailField(unique=False)
     watchlist_sector = models.TextField()
-
+    portfolio = models.TextField(default='[]') 
+    closePosition= models.TextField(default='[]')
+    
     class Meta:
         # Define the app_label to avoid conflicts in migrations
         app_label = 'Stocks'  # Replace 'your_app_name' with the actual name of your Django app
@@ -136,3 +138,4 @@ class EmaCountsSector(models.Model):
 
     def __str__(self):
         return f"{self.stock_data.symbol} - {self.stock_data.date}"
+

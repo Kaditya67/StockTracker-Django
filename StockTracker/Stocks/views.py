@@ -17,6 +17,114 @@ from django.template.loader import render_to_string
 from django.shortcuts import redirect
 from .models import stock_user
 
+from django.shortcuts import redirect
+from .models import stock_user
+
+from django.http import JsonResponse
+from datetime import datetime
+def close_position(request):
+    if request.method == 'POST':
+        # Get form data
+        symbol = request.POST.get('sellsymbol')
+        sell_quantity = int(request.POST.get('sellQuantity'))
+        sell_price = float(request.POST.get('sellPrice'))
+        sell_date = request.POST.get('sellDate')
+        
+        # Fetch the current user
+        user = request.user
+        
+        # Retrieve the user's portfolio data
+        portfolio_data = json.loads(user.portfolio)
+        
+        # Find the portfolio entry for the symbol being closed
+        portfolio_entry = next((entry for entry in portfolio_data if entry['symbol'] == symbol), None)
+        
+        if portfolio_entry:
+            purchase_price = float(portfolio_entry['purchase_price'])
+            purchase_date = datetime.strptime(portfolio_entry['purchase_date'], '%Y-%m-%d').date()
+            days_held = (datetime.strptime(sell_date, '%Y-%m-%d').date() - purchase_date).days
+            return_percentage = int(((sell_price - purchase_price) / purchase_price) * 100)
+
+            # Calculate remaining quantity in portfolio after selling
+            remaining_quantity = int(portfolio_entry['quantity']) - sell_quantity
+
+            # If remaining quantity is negative, return error
+            if remaining_quantity < 0:
+                return JsonResponse({'success': False, 'message': 'Sell quantity exceeds portfolio quantity.'})
+            
+            # Update the stock_user model
+            exit_details = {
+                'symbol': symbol,
+                'sell_quantity': sell_quantity,
+                'sell_price': sell_price,
+                'sell_date': sell_date,
+                'purchase_price': purchase_price,
+                'return_percentage': return_percentage,
+                'days_held': days_held
+            }
+            close_positions = json.loads(user.closePosition)
+            close_positions.append(exit_details)
+            user.closePosition = json.dumps(close_positions)
+            user.save()
+
+            # If remaining quantity is zero, remove the entry from portfolio
+            if remaining_quantity == 0:
+                # Check if the entry exists in the portfolio_data list before removing it
+                if portfolio_entry in portfolio_data:
+                    portfolio_data.remove(portfolio_entry)
+            else:
+                # Update the quantity in portfolio
+                portfolio_entry['quantity'] = str(remaining_quantity)
+
+            user.portfolio = json.dumps(portfolio_data)
+            user.save()
+
+            return JsonResponse({'success': True, 'message': 'Position closed successfully.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Symbol not found in portfolio.'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+@login_required
+def add_portfolio(request):
+    if request.method == 'POST':
+        # Get form data
+        symbol = request.POST.get('symbol')
+        quantity = request.POST.get('quantity')
+        purchase_price = request.POST.get('purchase_price')
+        purchase_date = request.POST.get('purchase_date')
+        
+        # Fetch the current user
+        user = request.user
+        
+        # Create a dictionary for the portfolio entry
+        portfolio_entry = {
+            'symbol': symbol,
+            'quantity': quantity,
+            'purchase_price': purchase_price,
+            'purchase_date': purchase_date
+        }
+        
+        try:
+            # Retrieve the user's portfolio data
+            portfolio_data = json.loads(user.portfolio)
+        except (json.JSONDecodeError, AttributeError):
+            # If the user has no portfolio data yet, initialize an empty list
+            portfolio_data = []
+        
+        # Append the new portfolio entry to the existing portfolio data
+        portfolio_data.append(portfolio_entry)
+        
+        # Convert the updated portfolio data back to JSON and save it to the user's portfolio field
+        user.portfolio = json.dumps(portfolio_data)
+        user.save()
+        
+        # Redirect or render success message
+        # For example:
+        return JsonResponse({'success': True, 'message': 'Stock added to portfolio successfully.'})
+    else:
+        # Handle invalid request method
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 def remove_from_watchlist(request):
     if request.method == 'POST':
@@ -407,7 +515,7 @@ def user_login(request):
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")
-            return render(request, "user_login.html")
+            return render(request, " .html")
 
     return render(request, "user_login.html")
 
@@ -526,26 +634,25 @@ def calculate_Stocks_ema20(stock_symbol):
             else:
                 ema20_counter -= 1
     return ema20_counter
-
-
 @login_required
 def stocks(request):
-    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
 
     symbols_to_remove = []
     result = []
+    date_list = set()  # Using a set to ensure unique dates
     for stock_symbol in unique_symbols:
         # Get the current date
-        current_date = timezone.now().date()
+        current_date = datetime.now().date()
 
-        # Calculate the date 20 days ago
+        # Calculate the date 40 days ago
         start_date = current_date - timedelta(days=40)
 
-        # Retrieve the most recent 20 data points for the stock symbol
+        # Retrieve the data points for the stock symbol within the past 40 days
         data_points = FinancialData.objects.filter(
             symbol=stock_symbol,
             date__range=[start_date, current_date]
-        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')
 
         if not data_points or not all(data_point[2] for data_point in data_points):
             symbols_to_remove.append(stock_symbol)
@@ -555,31 +662,30 @@ def stocks(request):
             symbols_to_remove.append(stock_symbol)
             continue
         
-        date_list=[]
-
         ema20_counter = calculate_Stocks_ema20(stock_symbol)
         for symbol, date, ema20, close_price in data_points:
-            if date not in date_list:
-                date_list.append(date)
+            date_list.add(date)  # Adding date to the set
             if ema20_counter > 0:
                 if close_price < ema20:
-                    ema20_counter =-1
+                    ema20_counter = -1
                 else:
                     ema20_counter += 1
             else:
                 if close_price > ema20:
-                    ema20_counter =1
+                    ema20_counter = 1
                 else:
                     ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    # print(date_list)
+    # Convert set to sorted list to maintain order
+    date_list = sorted(date_list)
+    
     unique_symbols = [symbol for symbol in unique_symbols if symbol not in symbols_to_remove]
     current_path = resolve(request.path_info).url_name
     context = {
-        'result': result,
-        'unique_symbols': unique_symbols,
-        'date_list': date_list,
+        'result': result[::-1],
+        'unique_symbols': unique_symbols[::-1],
+        'date_list': date_list[::-1],
         'current_path': current_path
     }
     return render(request, 'stocks.html', context)
@@ -616,66 +722,155 @@ def calculate_ema20(stock_symbol):
                 ema20_counter -= 1
     #print(stock_symbol, ema20_counter)
     return ema20_counter
-
 @login_required
 def sectors(request):
     unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()[:20]
     
     symbols_to_remove = []
     result = []
+    date_list = set()  # Using a set to ensure unique dates
     for stock_symbol in unique_symbols:
         # Get the current date
         current_date = timezone.now().date()
 
-        # Calculate the date 20 days ago
+        # Calculate the date 40 days ago
         start_date = current_date - timedelta(days=40)
 
-        # Retrieve the most recent 20 data points for the stock symbol
+        # Retrieve the data points for the stock symbol within the past 40 days
         data_points = SectorData.objects.filter(
             symbol=stock_symbol,
             date__range=[start_date, current_date]
-        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')[:20]
+        ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')
 
         if not data_points:
             continue
         
-        if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+        if len(data_points) == 1 or len(data_points) == 2 and data_points[0][2] == data_points[0][3]:
             symbols_to_remove.append(stock_symbol)
             continue
 
-        date_list=[]
-
         ema20_counter = calculate_ema20(stock_symbol)
         for symbol, date, ema20, close_price in data_points:
-            if date not in date_list:
-                date_list.append(date)
+            date_list.add(date)  # Adding date to the set
             if ema20_counter > 0:
                 if close_price < ema20:
-                    ema20_counter =-1
+                    ema20_counter = -1
                 else:
                     ema20_counter += 1
             else:
                 if close_price > ema20:
-                    ema20_counter =1
+                    ema20_counter = 1
                 else:
                     ema20_counter -= 1
             result.append((symbol, date, ema20_counter))
 
-    # print(date_list)
+    # Convert set to sorted list to maintain order
+    date_list = sorted(date_list)
+    
     current_path = resolve(request.path_info).url_name
     unique_symbols = list(set(unique_symbols) - set(symbols_to_remove))
     context = {
-        'result': result,
-        'unique_symbols': unique_symbols,
-        'date_list': date_list,
+        'result': result[::-1],
+        'unique_symbols': unique_symbols[::-1],
+        'date_list': date_list[::-1],
         'current_path': current_path
     }
     return render(request, 'sectors.html', context)
 
+from decimal import Decimal
+def ema20_is_positive(close_price, ema20):
+    return close_price > ema20
+
 @login_required
 def portfolio(request):
+    latest_dates = SectorData.objects.values('symbol').annotate(latest_date=Max('date'))
+    unique_symbols =FinancialData.objects.values_list('symbol', flat=True).distinct()
+
+    sector_data = []
+    ema_counts = []
+    rs_values = []
+    symbols = []
+    for stock in latest_dates:
+        latest_sector_data = SectorData.objects.filter(symbol=stock['symbol'], date=stock['latest_date']).first()
+        if latest_sector_data:
+            sector_data.append(latest_sector_data)
+            ema_count = EmaCountsSector.objects.filter(stock_data=latest_sector_data).first()
+            if ema_count:
+                ema_counts.append(ema_count)
+                rs_values.append(ema_count.rs_output)
+                symbols.append(latest_sector_data.symbol)
+
+    selected_ema = request.GET.get('ema', '20')
     current_path = resolve(request.path_info).url_name
-    return render(request, 'portfolio.html',{'current_path': current_path})
+
+##############
+    unique_symbols_financial = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    unique_symbols_sector = SectorData.objects.values_list('symbol', flat=True).distinct()
+    
+    user = request.user
+    portfolio_data = user.portfolio
+
+    # Parse the JSON data
+    portfolio_entries = []
+    if portfolio_data:
+        portfolio_entries = json.loads(portfolio_data)
+
+    # Iterate over portfolio entries and calculate additional fields
+    for entry in portfolio_entries:
+        # Calculate the number of days since purchase
+        purchase_date = datetime.strptime(entry['purchase_date'], '%Y-%m-%d').date()
+        days_since_purchase = (datetime.now().date() - purchase_date).days
+        entry['no_of_days'] = days_since_purchase+1
+
+        # Checking if the symbol is present in both FinancialData and SectorData
+        symbol = entry['symbol']
+        symbol_in_financial = symbol in unique_symbols_financial
+        symbol_in_sector = symbol in unique_symbols_sector
+
+        # Fetching the latest data for the symbol
+        if symbol_in_financial:
+            latest_data = FinancialData.objects.filter(symbol=symbol).latest('date')
+        elif symbol_in_sector:
+            latest_data = SectorData.objects.filter(symbol=symbol).latest('date')
+
+        # Calculate return percentage if latest data exists
+        if 'latest_data' in locals():
+            current_price = latest_data.close_price
+            entry['return_percentage'] = int(((current_price - Decimal(entry['purchase_price'])) / Decimal(entry['purchase_price'])) * 100)
+            print("current_price ", current_price,"purchase_price ", entry['purchase_price'])
+        entry['trend'] = 'Up' if ema20_is_positive(current_price, latest_data.ema20) else 'Down'
+        entry['position'] = 'Open'
+        
+        context = {
+            'sector_data': sector_data,
+            'unique_symbols': unique_symbols,
+            'ema_counts': ema_counts,
+            'rs_values': rs_values,
+            'symbols': symbols,
+            'selected_ema': selected_ema,
+            'current_path': current_path,
+            'portfolio_entries':portfolio_entries
+        }
+
+    return render(request, 'portfolio.html',context)
+
+@login_required
+def closed_positions(request):
+    user = request.user
+    cp_data = user.closePosition
+
+    if cp_data:
+        cp_entries = json.loads(cp_data)
+    else:
+        cp_entries = []
+
+    for entry in cp_entries:
+        entry['position'] = 'Closed'  # Update position for each entry if needed
+
+    context = {
+        'cp_entries': cp_entries,
+    }
+    return render(request, 'closedpositions.html',context)
 
 def home_temp(request):
     current_path = resolve(request.path_info).url_name
@@ -732,11 +927,6 @@ def stock_temp(request):
     logger.debug("Rendering stock_template.html template with context")
     current_path = resolve(request.path_info).url_name
     return render(request, 'stock_template.html', context)
-
-
-@login_required
-def closed_positions(request):
-    return render(request, 'closedpositions.html')
 
 @login_required
 def settings(request):

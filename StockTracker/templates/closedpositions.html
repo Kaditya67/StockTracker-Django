@@ -9,21 +9,22 @@
 
 
         <table class="table table-bordered mt-3">
-            <thead>
+            <thead style="background-color:#343a3f">
                 <tr class="text-center">
-                  <th style="background-color: #343a3f;">Sr. No</th>
-                  <th style="background-color: #343a3f;">Script</th>
-                  <th style="background-color: #343a3f;">Buy Price </th>
-                  <th style="background-color: #343a3f;"> QTY </th>
-                  <th style="background-color: #343a3f;"> Return % </th>
-                  <th style="background-color: #343a3f;">No of Days</th>
-                  <th style="background-color: #343a3f;"> Sold Price </th>
-                  <th style="background-color: #343a3f;">Position</th>
-              </tr>
+                    <th>Sr. No</th>
+                    <th>Sell Date</th>
+                    <th>Script</th>
+                    <th>Buy Price </th>
+                    <th> QTY </th>
+                    <th> Return % </th>
+                    <th>No of Days</th>
+                    <th>Sold Price </th>
+                    <th>Position</th>
+                </tr>
             </thead>
             <tbody>
                 <tr class="text-center">
-                    <td>1</td>
+                    <td>1(example)</td>
                     <td> AXIS </td>
                     <td> 567.40 </td>
                     <td> 24 </td>
@@ -32,16 +33,21 @@
                     <td>600</td>
                     <td>Closed</td>
                 </tr>
-                <tr class="text-center">
-                    <td>2</td>
-                    <td>SBIN</td>
-                    <td> 450.40 </td>
-                    <td> 53 </td>
-                    <td> -8 %</td>
-                    <td>3</td>
-                    <td>435</td>
-                    <td>Closed</td>
-                </tr>
+              </tr>
+              {% for entry in cp_entries %}
+                  <tr class="text-center">
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ entry.sell_date }}</td>
+                      <td>{{ entry.symbol }}</td>
+                      <td>{{ entry.purchase_price }}</td>
+                      <td>{{ entry.sell_quantity }}</td>
+                      <td>{{ entry.return_percentage }} %</td>
+                      <td>{{ entry.no_of_days }}</td>
+                      <td>{{ entry.sell_price }}</td>
+                      <td>{{ entry.position }}</td>
+                             
+                  </tr>
+              {% endfor %}         
                 <!-- Add more rows as needed -->
             </tbody>
         </table>

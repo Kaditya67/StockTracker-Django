@@ -2,6 +2,27 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from django.db import models
+
+class Sectors(models.Model):
+    name = models.CharField(max_length=50)
+    symbol = models.CharField(max_length=255, unique=True)
+    sector_id = models.IntegerField(primary_key=True, default=1)  # Default value added
+    isincode = models.CharField(max_length=255,default='')
+
+    def __str__(self):
+        return self.name
+
+class Stocks(models.Model):
+    name = models.CharField(max_length=50)
+    sectors = models.ManyToManyField(Sectors)  # Many-to-many relationship with Sectors
+    symbol = models.CharField(max_length=255, unique=True)
+    isincode = models.CharField(max_length=255)
+    id = models.IntegerField(primary_key=True, default=1)  # Manually defining a default value for id
+
+    def __str__(self):
+        return self.name
+
 class stock_user(AbstractUser):  # Asad code Do not touch!!!!!!
     username = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=50)

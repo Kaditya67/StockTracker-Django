@@ -634,13 +634,21 @@ def calculate_Stocks_ema20(stock_symbol):
             else:
                 ema20_counter -= 1
     return ema20_counter
+
+from django.db.models import Q
 @login_required
 def stocks(request):
+    selected_sector = request.GET.get('sector', '')  # Get the selected sector from GET request
     unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
 
     symbols_to_remove = []
     result = []
     date_list = set()  # Using a set to ensure unique dates
+
+    if selected_sector:  # Apply filtering if a sector is selected
+        sector_filter = Q(sectors__name=selected_sector)  # Filter by sector name
+        unique_symbols = Stocks.objects.filter(sectors__name=selected_sector).values_list('symbol', flat=True).distinct()[:20]
+
     for stock_symbol in unique_symbols:
         # Get the current date
         current_date = datetime.now().date()
@@ -682,11 +690,16 @@ def stocks(request):
     
     unique_symbols = [symbol for symbol in unique_symbols if symbol not in symbols_to_remove]
     current_path = resolve(request.path_info).url_name
+    # Fetch a list of all sectors
+    sectors = Sectors.objects.all()
+
     context = {
         'result': result[::-1],
         'unique_symbols': unique_symbols[::-1],
         'date_list': date_list[::-1],
-        'current_path': current_path
+        'current_path': current_path,
+        'sectors': sectors,  # Pass the sectors to the template
+        'selected_sector': selected_sector,  # Pass the selected sector to the template
     }
     return render(request, 'stocks.html', context)
 
@@ -992,14 +1005,11 @@ def calculate_rs(df, nifty_df, n=14, start_column='Open', close_column='Close'):
 
     return rs
 
+from .models import Stocks
 def fetch_and_calculate_ema(request):
 
     # Database setup
-    stock_symbols = [
-        'RELIANCE.NS', 'TATAMOTORS.NS', 'HDFCBANK.NS', 'INFY.NS', 'TATASTEEL.NS',
-        'ZEEL.NS', 'HAVELLS.NS', 'HDFC.NS', 'ITC.NS', 'NESTLEIND.NS',
-        'ICICIBANK.NS', 'HINDALCO.NS', 'DRREDDY.NS', 'WIPRO.NS', 'MARUTI.NS'
-    ]
+    stock_symbols = Stocks.objects.values_list('symbol', flat=True).distinct()
 
     # Override the data reader function
     yf.pdr_override()
@@ -1086,12 +1096,11 @@ def fetch_and_calculate_ema(request):
 
     return render(request, 'fetch_and_calculate_ema.html', {'name': 'Stocks', 'result_data': result_data})
 
+from .models import Sectors
 def fetch_and_calculate_ema_sector(request):
 
     # Database setup
-    stock_symbols = [
-        '^NSEI','^CNXAUTO','^NSEBANK','^NIFTYFIN','^CNXFMCG','^CNXPHARMA','^CNXIT','^CNXMEDIA','^CNXMETAL','^CNXPHARMA','^CNXPSUBANK','^CNXIT','^CNXPSUBANK','^CNXREALTY','^CNXCONSUMERDUR','^NSEI:ONGC-NSEI:RELIANCE-NSEI:GAIL-NSEI:BPCL-NSEI:IOC'  
-    ]
+    stock_symbols = Sectors.objects.values_list('symbol', flat=True).distinct()
 
     # Override the data reader function
     yf.pdr_override()

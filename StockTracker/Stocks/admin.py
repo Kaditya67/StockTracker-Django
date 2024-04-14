@@ -4,7 +4,11 @@ from django.contrib import admin
 from . models import stock_user
 admin.site.register(stock_user)
 
+from .models import Stocks
+admin.site.register(Stocks)
 
+from .models import Sectors
+admin.site.register(Sectors)
 # stocks/admin.py
 from .models import FinancialData
 admin.site.register(FinancialData)

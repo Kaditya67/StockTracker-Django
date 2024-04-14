@@ -31,7 +31,7 @@ urlpatterns = [
     path('analyze_stocks/', views.analyze_closing_vs_ema, name='analyze_closing_vs_ema'),
     path('analyze_sector/', views.analyze_closing_vs_ema_sector, name='analyze_closing_vs_ema_sector'),
     
-    path('graph/<str:symbol>/<int:ema_value>/', views.graph_partial, name='graph'),
+    path('graph/<str:type>/<str:symbol>/<int:ema_value>/', views.graph_partial, name='graph'),
     path('symbols/', views.symbols_and_ema_counts, name='symbols_and_closing_prices'),
     path('dashboard/', views.dashboard, name='dashboard'),  # URL for the sectoral dashboard
     path('dashboard/<int:ema>/', views.dashboard, name='dashboard_with_ema'),

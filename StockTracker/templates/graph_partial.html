@@ -27,7 +27,7 @@
         }
 
         select {
-            width: 30%; /* Adjust the width as needed */
+            width: 24%; /* Adjust the width as needed */
             padding: 8px;
             margin-bottom: 20px;
             border: 1px solid #ced4da;
@@ -52,86 +52,108 @@
     <div style="padding-left: 28px;">
         <div> 
             <div> 
-                <b>STOCK:</b>
-                <select id="stockSelector" onchange="updateGraphUrl()">
-                    {% for stock_name in stock %}
-                    <option value="{{ stock_name }}">{{ stock_name }}</option>
+                <b>Type:</b>
+                <select id="typeSelector" onchange="updateGraphUrl()">
+                    <option value="stock">Stock</option>
+                    <option value="sector">Sector</option>
+                </select>
+
+                <b>Symbol:</b>
+                <select id="symbolSelector" onchange="updateGraphUrl()">
+                    <!-- Populate options dynamically based on available symbols -->
+                    {% for symbol in s_list %}
+                    <option value="{{ symbol }}">{{ symbol }}</option>
                     {% endfor %}
-                </select >
-            
-                <b style="padding-left:30px">EMA:</b>
+                </select>
+
+                <b>EMA:</b>
                 <select id="emaSelector" onchange="updateGraphUrl()">
                     <option value="20">EMA 20</option>
                     <option value="50">EMA 50</option>
                     <option value="100">EMA 100</option>
                     <option value="200">EMA 200</option>
                 </select>
+
             </div>
         </div>
 
         <img src="data:image/png;base64,{{ img_base64 }}" alt="Stock Graph" />
     </div>
 
+    
     <script>
-        document.getElementById("emaSelector").addEventListener("change", function() {
-            // Get the selected value
-            var selectedValue = this.value;
         
-            // Store the selected value in local storage
+
+        document.getElementById("typeSelector").addEventListener("change", function() {
+            var selectedValue = this.value;
             localStorage.setItem("selectedDropdownValue1", selectedValue);
         });
         
-        document.getElementById("stockSelector").addEventListener("change", function() {
-            // Get the selected value
+        document.getElementById("symbolSelector").addEventListener("change", function() {
             var selectedValue = this.value;
-        
-            // Store the selected value in local storage
             localStorage.setItem("selectedDropdownValue2", selectedValue);
         });
         
-        // Check if there's a stored value in local storage
+        document.getElementById("emaSelector").addEventListener("change", function() {
+            var selectedValue = this.value;
+            localStorage.setItem("selectedDropdownValue3", selectedValue);
+        });
+
         var storedValue1 = localStorage.getItem("selectedDropdownValue1");
         var storedValue2 = localStorage.getItem("selectedDropdownValue2");
-        
-        // Set the dropdown value to the stored value (if any)
-        if (storedValue1 && storedValue2) {
-            document.getElementById("emaSelector").value = storedValue1;
-            document.getElementById("stockSelector").value = storedValue2;
-        }
-        
-        
-        //--------------------
+        var storedValue3 = localStorage.getItem("selectedDropdownValue3");
 
         
-    
-        // Check if there's a stored value in local storage
-    
         // Set the dropdown value to the stored value (if any)
+        if (storedValue1 && storedValue2 && storedValue3 ) {
+            document.getElementById("typeSelector").value = storedValue1;
+            document.getElementById("symbolSelector").value = storedValue2;
+            document.getElementById("emaSelector").value = storedValue3;
+        }
+        
         if (storedValue) {
             document.getElementById("stockSelector").value = storedValue;
         }
         
-      function updateGraphUrl() {
-        var selectedStock = document.getElementById("stockSelector").value;
-        var selectedEMA = document.getElementById("emaSelector").value;
+        function updateGraphUrl() {
+            var selectedType = document.getElementById("typeSelector").value;
+            var selectedSymbol = document.getElementById("symbolSelector").value;
+            var selectedEMA = document.getElementById("emaSelector").value;
+        
+            // Update the URL
+            var newUrl = `/graph/${selectedType}/${selectedSymbol}/${selectedEMA}/`;
+            history.pushState(null, "", newUrl);
+            location.reload();
+            
+            document.addEventListener("DOMContentLoaded", function() {
+                // Get the current URL
+                var currentUrl = window.location.href;
+            
+                // Parse the URL to extract type and symbol parameters
+                var urlParams = new URLSearchParams(currentUrl.split('?')[1]);
+                var type = urlParams.get("type");
+                var symbol = urlParams.get("symbol");
+            
+                // Set the dropdown values
+                if (type && symbol) {
+                    document.getElementById("typeSelector").value = type;
+                    document.getElementById("symbolSelector").value = symbol;
+                }
+            });
+            
 
-        // Update the URL
-        var newUrl = "/graph/" + selectedStock + "/" + selectedEMA + "/";
-        history.pushState(null, "", newUrl);
-        location.reload();
-        // Your existing AJAX code to fetch and update the graph
-        $.ajax({
-          type: "GET",
-          url: newUrl,
-          success: function (response) {
-            $("#graphContainer").html(response);
-          },
-          error: function (error) {
-            console.error("Error fetching graph:", error);
-          },
-        });
-      }
-
+            $.ajax({
+                type: "GET",
+                url: newUrl,
+                success: function (response) {
+                    $("#graphContainer").html(response);
+                },
+                error: function (error) {
+                    console.error("Error fetching graph:", error);
+                },
+            });
+        }
+        
     </script>
 
 </body>

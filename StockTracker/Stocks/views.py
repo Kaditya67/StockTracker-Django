@@ -854,6 +854,7 @@ def portfolio(request):
         entry['trend'] = 'Up' if ema20_is_positive(current_price, latest_data.ema20) else 'Down'
         entry['position'] = 'Open'
         
+        
         context = {
             'sector_data': sector_data,
             'unique_symbols': unique_symbols,
@@ -1493,15 +1494,22 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from io import BytesIO
 import base64
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from django.urls import resolve
 from .models import FinancialData
 
-def graph_partial(request, symbol, ema_value):
+def graph_partial(request, type, symbol, ema_value):
 
     try:
-        # Fetch the latest 200 records based on the symbol
-        data = FinancialData.objects.filter(symbol=symbol).order_by('-id')[:200].values('date', 'close_price', f'ema{ema_value}')
+        if type == 'stock':
+            data = FinancialData.objects.filter(symbol=symbol).order_by('-date')[:200].values('date', 'close_price', f'ema{ema_value}')
+            s_list = FinancialData.objects.values_list('symbol', flat=True).distinct()
+
+        elif type == 'sector':
+            data = SectorData.objects.filter(symbol=symbol).order_by('-date')[:200].values('date', 'close_price', f'ema{ema_value}')
+            s_list = SectorData.objects.values_list('symbol', flat=True).distinct()
 
         # Unpack the data into separate lists
         dates = [entry['date'] for entry in data][::-1]  # Reverse the order to show the progress from the past
@@ -1511,11 +1519,11 @@ def graph_partial(request, symbol, ema_value):
         # Plotting
         plt.figure(figsize=(11, 6))
         plt.plot(dates, closing_prices, label=f'{symbol} Closing Prices')
-        plt.plot(dates, ema_values, label=f'{symbol} EMA{ema_value}')  # Corrected this line
+        plt.plot(dates, ema_values, label=f'{symbol} EMA{ema_value}')
 
         plt.xlabel('Date')
         plt.ylabel('Values')
-        plt.title(f'{symbol} Closing Prices and EMA Values Over the Past 200 Records')
+        plt.title(f'{symbol} {"Stock" if type == "stock" else "Sector"} Closing Prices and EMA Values Over the Past 200 Records')
         plt.legend(loc='upper left')
 
         # Encode the image as base64
@@ -1526,15 +1534,11 @@ def graph_partial(request, symbol, ema_value):
         img_buf.seek(0)
         img_base64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
 
-        stock = FinancialData.objects.values_list('symbol', flat=True).distinct()
-        current_path = resolve(request.path_info).url_name
         # Render the graph as HTML
         current_path = resolve(request.path_info).url_name
-
         context = {
-            'selected_symbol': symbol,
+            's_list': s_list,
             'img_base64': img_base64,
-            'stock': stock,
             'current_path': current_path,
         }
         return render(request, 'graph_partial.html', context)
@@ -1542,6 +1546,7 @@ def graph_partial(request, symbol, ema_value):
     except Exception as e:
         # Handle specific exceptions if possible
         return HttpResponse(f"Error: {e}")
+
 
 # views.py
 def get_stock_data(request):

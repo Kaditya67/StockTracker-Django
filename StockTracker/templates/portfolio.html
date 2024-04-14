@@ -51,7 +51,7 @@
             </thead>
             <tbody>
                 <tr class="text-center">
-                    <td>1(example)</td>
+                    {% comment %} <td>1(example)</td>
                     <td>AXIS</td>
                     <td> 567.40 </td>
                     <td> 24 </td>
@@ -60,12 +60,13 @@
                     <td>Up</td>
                     <td>Open</td>
                     <td><span class="badge badge-success">Buy</span></td>
-                    <td><button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button> </td>
+                    <td><button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button> </td> {% endcomment %}
                 </tr>
                   {% for entry in portfolio_entries %}
                       <tr class="text-center">
                           <td>{{ forloop.counter }}</td>
-                          <td>{{ entry.symbol }}</td>
+                          <td><a href="#" onclick="showGraph('{{ entry.symbol }}');">{{ entry.symbol }}</a></td>
+
                           <td>{{ entry.purchase_price }}</td>
                           <td>{{ entry.quantity }}</td>
                           <td>{{ entry.return_percentage }} %</td>
@@ -98,17 +99,18 @@
           <!-- Stock addition form -->
           <form method="post" action="{% url 'add_portfolio' %}">
             {% csrf_token %}
+                     
             <div class="form-group">
-                <label for="symbol">Symbol:</label>
-                <select class="form-control" id="symbol" name="symbol" required>
-                    {% for sector in sector_data %}
-                        <option value="{{ sector.symbol }}">{{ sector.symbol }}</option>
-                    {% endfor %}
-                    {% for symbol in unique_symbols %}
-                        <option value="{{ symbol }}">{{ symbol }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+              <label for="stockSymbol">Stock Symbol:</label>
+              <select class="form-control" id="symbol" name="symbol" required>
+                {% for sector in sector_data %}
+                    <option value="{{ sector.symbol }}">{{ sector.symbol }}</option>
+                {% endfor %}
+                {% for symbol in unique_symbols %}
+                    <option value="{{ symbol }}">{{ symbol }}</option>
+                {% endfor %}
+            </select>                
+          </div>
             <div class="form-group">
                 <label for="quantity">Quantity:</label>
                 <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Enter quantity" required>
@@ -168,39 +170,55 @@
       </div>
 
       <script>
+        // Function to fetch and display the graph for the selected symbol
+        function showGraph(symbol) {
+          // Determine the type based on the symbol
+          var type = 'stock';
+          if (symbol.startsWith('^')) {
+              type = 'sector';
+          }
+          
+          // Construct the URL for the graph
+          var url = '/graph/' + type + '/' + symbol + '/20/';
+          
+          // Redirect to the graph page with the selected symbol
+          window.location.href = url;
+      }
+      
+        
         var $j = jQuery.noConflict();
         $j(document).ready(function() {
           $j('form[action="{% url 'add_portfolio' %}"]').submit(function(event) {
             event.preventDefault(); // Prevent the form from submitting normally
+            
+            // Serialize form data
+            var formData = $j(this).serialize();
+            
+            var $form = $j(this); // Cache the form element
+            
+            // Send a POST request to add portfolio
+            $j.ajax({
+              url: $form.attr('action'),
+              type: 'POST',
+              data: formData,
+              success: function(response) {
+                // Display success alert
+                alert(response.message);
                 
-                // Serialize form data
-                var formData = $j(this).serialize();
-                
-                var $form = $j(this); // Cache the form element
-                
-                // Send a POST request to add portfolio
-                $j.ajax({
-                  url: $form.attr('action'),
-                  type: 'POST',
-                  data: formData,
-                  success: function(response) {
-                      // Display success alert
-                      alert(response.message);
-                      
-                      // Close the modal
-                      $j('#addStockModal').find('[aria-hidden="true"]').click();
-                      location.reload()
-                    },
-                  error: function(xhr, status, error) {
-                      // Display error alert
-                      alert('An error occurred while processing your request. Please try again.');
-                  }
-              });
-              
+                // Close the modal
+                $j('#addStockModal').find('[aria-hidden="true"]').click();
+                location.reload()
+              },
+              error: function(xhr, status, error) {
+                // Display error alert
+                alert('An error occurred while processing your request. Please try again.');
+              }
             });
+          });
         });
-
-    </script>
+        
+        </script>
+        
   <script>
     $j('#close_position_form').submit(function(event) {
       event.preventDefault(); // Prevent the default form submission

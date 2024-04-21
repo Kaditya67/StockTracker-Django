@@ -14,22 +14,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in watchlist_sector %}
+                    {% if watchlist_sector %}
+                        {% for record in watchlist_sector %}
+                            <tr>
+                                <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
+                                <td>{{ record.date }}</td>
+                                <td>{{ record.symbol }}</td>
+                                <td>{{ record.closing_price }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Display a message if watchlist is empty -->
                         <tr>
-                            <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
-                            <td>{{ record.date }}</td>
-                            <td>{{ record.symbol }}</td>
-                            <td>{{ record.closing_price }}</td>
+                            <td colspan="4" class="text-center">Watchlist is empty</td>
                         </tr>
-                    {% endfor %}
-                    {% comment %} {% for record in watchlist_stock %}
-                        <tr>
-                            <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
-                            <td>{{ record.date }}</td>
-                            <td>{{ record.symbol }}</td>
-                            <td>{{ record.closing_price }}</td>
-                        </tr>
-                    {% endfor %} {% endcomment %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>

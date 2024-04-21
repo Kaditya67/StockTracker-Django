@@ -62,6 +62,7 @@
                     <td><span class="badge badge-success">Buy</span></td>
                     <td><button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button> </td> {% endcomment %}
                 </tr>
+                {% if portfolio_entries%}
                   {% for entry in portfolio_entries %}
                       <tr class="text-center">
                           <td>{{ forloop.counter }}</td>
@@ -80,6 +81,11 @@
                           </td>
                       </tr>
                   {% endfor %}
+                {% else%}
+                  <tr>
+                    <td colspan="4" class="text-center">Watchlist is empty</td>
+                </tr>
+                {% endif%}
             </tbody>
         </table>
 
@@ -170,18 +176,16 @@
       </div>
 
       <script>
-        // Function to fetch and display the graph for the selected symbol
         function showGraph(symbol) {
-          // Determine the type based on the symbol
           var type = 'stock';
           if (symbol.startsWith('^')) {
               type = 'sector';
           }
-          
-          // Construct the URL for the graph
-          var url = '/graph/' + type + '/' + symbol + '/20/';
-          
-          // Redirect to the graph page with the selected symbol
+          localStorage.setItem("selectedDropdownValue1", type);
+          localStorage.setItem("selectedDropdownValue2", symbol);
+          localStorage.setItem("selectedDropdownValue3", '20');
+
+          var url = '/graph/' + type + '/' + encodeURIComponent(symbol) + '/20/'; 
           window.location.href = url;
       }
       

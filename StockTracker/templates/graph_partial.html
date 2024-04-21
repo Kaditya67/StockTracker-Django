@@ -58,7 +58,7 @@
                     <option value="sector">Sector</option>
                 </select>
 
-                <b>Symbol:</b>
+                <b style="padding-left:24px">Symbol:</b>
                 <select id="symbolSelector" onchange="updateGraphUrl()">
                     <!-- Populate options dynamically based on available symbols -->
                     {% for symbol in s_list %}
@@ -66,7 +66,7 @@
                     {% endfor %}
                 </select>
 
-                <b>EMA:</b>
+                <b style="padding-left:24px">EMA:</b>
                 <select id="emaSelector" onchange="updateGraphUrl()">
                     <option value="20">EMA 20</option>
                     <option value="50">EMA 50</option>
@@ -76,7 +76,14 @@
 
             </div>
         </div>
-
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var storedValue1 = localStorage.getItem("selectedDropdownValue1");
+                var storedValue2 = localStorage.getItem("selectedDropdownValue2");
+                document.getElementById("typeSelector").value = storedValue1;
+                document.getElementById("symbolSelector").value = storedValue2;
+            });
+        </script>
         <img src="data:image/png;base64,{{ img_base64 }}" alt="Stock Graph" />
     </div>
 
@@ -111,37 +118,19 @@
             document.getElementById("emaSelector").value = storedValue3;
         }
         
-        if (storedValue) {
-            document.getElementById("stockSelector").value = storedValue;
-        }
-        
+       
+        // Function to update the URL and reload the page
         function updateGraphUrl() {
+            
             var selectedType = document.getElementById("typeSelector").value;
             var selectedSymbol = document.getElementById("symbolSelector").value;
             var selectedEMA = document.getElementById("emaSelector").value;
-        
-            // Update the URL
-            var newUrl = `/graph/${selectedType}/${selectedSymbol}/${selectedEMA}/`;
+    
+            var newUrl = '/graph/' + selectedType + '/' + encodeURIComponent(selectedSymbol) + '/' + selectedEMA + '/';
             history.pushState(null, "", newUrl);
             location.reload();
+        
             
-            document.addEventListener("DOMContentLoaded", function() {
-                // Get the current URL
-                var currentUrl = window.location.href;
-            
-                // Parse the URL to extract type and symbol parameters
-                var urlParams = new URLSearchParams(currentUrl.split('?')[1]);
-                var type = urlParams.get("type");
-                var symbol = urlParams.get("symbol");
-            
-                // Set the dropdown values
-                if (type && symbol) {
-                    document.getElementById("typeSelector").value = type;
-                    document.getElementById("symbolSelector").value = symbol;
-                }
-            });
-            
-
             $.ajax({
                 type: "GET",
                 url: newUrl,

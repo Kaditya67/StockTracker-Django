@@ -855,7 +855,7 @@ def portfolio(request):
         entry['position'] = 'Open'
         
         
-        context = {
+    context = {
             'sector_data': sector_data,
             'unique_symbols': unique_symbols,
             'ema_counts': ema_counts,
@@ -864,7 +864,7 @@ def portfolio(request):
             'selected_ema': selected_ema,
             'current_path': current_path,
             'portfolio_entries':portfolio_entries
-        }
+    }
 
     return render(request, 'portfolio.html',context)
 

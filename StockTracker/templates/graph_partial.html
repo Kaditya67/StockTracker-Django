@@ -56,6 +56,9 @@
                 <select id="typeSelector" onchange="updateGraphUrl()">
                     <option value="stock">Stock</option>
                     <option value="sector">Sector</option>
+                    {% for sectors in sectors%}
+                    <option value="{{ sectors }}">{{ sectors }}</option>
+                    {% endfor%}
                 </select>
 
                 <b style="padding-left:24px">Symbol:</b>
@@ -80,13 +83,11 @@
             document.addEventListener("DOMContentLoaded", function() {
                 var storedValue1 = localStorage.getItem("selectedDropdownValue1");
                 var storedValue2 = localStorage.getItem("selectedDropdownValue2");
-                document.getElementById("typeSelector").value = storedValue1;
-                document.getElementById("symbolSelector").value = storedValue2;
+                
             });
         </script>
         <img src="data:image/png;base64,{{ img_base64 }}" alt="Stock Graph" />
     </div>
-
     
     <script>
         
@@ -127,6 +128,12 @@
             var selectedEMA = document.getElementById("emaSelector").value;
     
             var newUrl = '/graph/' + selectedType + '/' + encodeURIComponent(selectedSymbol) + '/' + selectedEMA + '/';
+            if (newUrl.includes('//')) {
+                alert("Failed to load the chart");
+                window.location.href = "/graph/sector/%5ENSEI/20/";
+                newUrl='/graph/sector/%5ENSEI/20/'
+            }
+            
             history.pushState(null, "", newUrl);
             location.reload();
         

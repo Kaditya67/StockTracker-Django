@@ -259,16 +259,23 @@
           <li
             class="nav-item {% if current_path == 'graph'%}active{% endif %}"
           >
-            <a
+            <a id='graph'
               class="nav-link text-light"
-              href="{% url 'graph' type='stock' symbol='TATAMOTORS.NS' ema_value=20 %}
+              href="{% url 'graph' type='sector' symbol='^NSEI' ema_value=20 %}
               "
             >
             <i class="fa fa-bar-chart"></i>
               <span class="nav-text">Charts</span>
             </a>
           </li>
-          
+          <script>
+            document.getElementById("graph").addEventListener("click", function(event) {
+            localStorage.setItem("selectedDropdownValue1", 'sector');
+            localStorage.setItem("selectedDropdownValue2", '^NSEI');
+            localStorage.setItem("selectedDropdownValue3", '20');
+          });
+
+          </script> 
           <!-- Sectors -->
           <li
             class="nav-item {% if current_path == 'sectors' %}active{% endif %}"

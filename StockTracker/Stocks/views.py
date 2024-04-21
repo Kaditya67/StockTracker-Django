@@ -10,7 +10,7 @@ from .models import SectorData, EmaCountsSector
 from django.db.models import Max
 from django.shortcuts import render
 from django.urls import resolve
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 import json
 from django.template.loader import render_to_string
 
@@ -1582,10 +1582,10 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from django.urls import resolve
-from .models import FinancialData
+from .models import FinancialData,Sectors,Stocks
 
 def graph_partial(request, type, symbol, ema_value):
-
+    sectors = Sectors.objects.all()
     try:
         if type == 'stock':
             data = FinancialData.objects.filter(symbol=symbol).order_by('-date')[:200].values('date', 'close_price', f'ema{ema_value}')
@@ -1595,6 +1595,17 @@ def graph_partial(request, type, symbol, ema_value):
             data = SectorData.objects.filter(symbol=symbol).order_by('-date')[:200].values('date', 'close_price', f'ema{ema_value}')
             s_list = SectorData.objects.values_list('symbol', flat=True).distinct()
 
+        elif type in [sector.name for sector in sectors]:  # Check if type matches any sector name
+        # Retrieve the symbols of stocks belonging to the selected sector
+            stocks_in_sector = Stocks.objects.filter(sectors__name=type)
+            s_list = list(stocks_in_sector.values_list('symbol', flat=True))
+            
+            # Fetch financial data for each stock in the sector
+            data = FinancialData.objects.filter(symbol=symbol).order_by('-date')[:200].values('date', 'close_price', f'ema{ema_value}')
+
+        else:
+            pass
+           
         # Unpack the data into separate lists
         dates = [entry['date'] for entry in data][::-1]  # Reverse the order to show the progress from the past
         closing_prices = [entry['close_price'] for entry in data][::-1]
@@ -1624,13 +1635,13 @@ def graph_partial(request, type, symbol, ema_value):
             's_list': s_list,
             'img_base64': img_base64,
             'current_path': current_path,
+            'sectors': sectors,
+            
         }
-        return render(request, 'graph_partial.html', context)
-
+        
     except Exception as e:
         # Handle specific exceptions if possible
         return HttpResponse(f"Error: {e}")
-
 
 # views.py
 def get_stock_data(request):

@@ -221,7 +221,7 @@ def send_watchlist_email(user):
     except Exception as e:
         print("Error sending watchlist email:", str(e))
 
-
+#add serctorr to watchlist
 def fetch_sector_data(request):
     if request.method == 'POST':
         symbol = request.POST.get('symbol')
@@ -231,9 +231,9 @@ def fetch_sector_data(request):
             sector_data = SectorData.objects.filter(symbol=symbol).latest('date')
             # Serialize the data dictionary
             serialized_data = {
-                'date': sector_data.date.strftime('%Y-%m-%d'),
+                # 'date': sector_data.date.strftime('%Y-%m-%d'),
                 'symbol': sector_data.symbol,
-                'closing_price': float(sector_data.close_price),  # Convert Decimal to float
+                # 'closing_price': float(sector_data.close_price),  # Convert Decimal to float
             }
             # Get the user's watchlist_sector
             watchlist_sector = user.watchlist_sector
@@ -271,6 +271,7 @@ from .models import FinancialData
 import json
 
 
+#add serctorr to watchlist
 @login_required
 def fetch_stock_data(request):
     if request.method == 'POST':
@@ -283,9 +284,9 @@ def fetch_stock_data(request):
             return JsonResponse({'success': False, 'message': 'Stock data not found for the symbol.'})
 
         serialized_data = {
-            'date': stock_data.date.strftime('%Y-%m-%d'),
+            # 'date': stock_data.date.strftime('%Y-%m-%d'),
             'symbol': stock_data.symbol,
-            'closing_price': float(stock_data.close_price),
+            # 'closing_price': float(stock_data.close_price),
         }
 
         try:
@@ -311,21 +312,105 @@ def fetch_stock_data(request):
 #     current_path = resolve(request.path_info).url_name
 #     return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector, 'current_path': current_path})
 from django.shortcuts import resolve_url 
-
 @login_required
 def watchlist(request):
-    try:
-        watchlist_sector = json.loads(request.user.watchlist_sector)
-    except (json.JSONDecodeError, AttributeError):
-        watchlist_sector = []
+    # Get symbols from the watchlist
+    watchlist_data = request.user.watchlist_sector
 
+    symbols_from_watchlist = []
     try:
-        watchlist_stock = json.loads(request.user.watchlist_stock)
+        watchlist_data = json.loads(watchlist_data)
+        symbols_from_watchlist = [item['symbol'] for item in watchlist_data]
     except (json.JSONDecodeError, AttributeError):
-        watchlist_stock = []
+        pass
 
+    symbols_to_remove = []
+    result = []
+    date_list = set()  # Using a set to ensure unique dates
+
+    for stock_symbol in symbols_from_watchlist:
+        if stock_symbol.startswith('^'):
+            current_date = timezone.now().date()
+
+            # Calculate the date 40 days ago
+            start_date = current_date - timedelta(days=40)
+
+            # Retrieve the data points for the stock symbol within the past 40 days
+            data_points = SectorData.objects.filter(
+                symbol=stock_symbol,
+                date__range=[start_date, current_date]
+            ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')
+
+            if not data_points:
+                continue
+            
+            if len(data_points) == 1 or len(data_points) == 2 and data_points[0][2] == data_points[0][3]:
+                symbols_to_remove.append(stock_symbol)
+                continue
+
+            ema20_counter = calculate_ema20(stock_symbol)
+            for symbol, date, ema20, close_price in data_points:
+                date_list.add(date)  # Adding date to the set
+                if ema20_counter > 0:
+                    if close_price < ema20:
+                        ema20_counter = -1
+                    else:
+                        ema20_counter += 1
+                else:
+                    if close_price > ema20:
+                        ema20_counter = 1
+                    else:
+                        ema20_counter -= 1
+                result.append((symbol, date, ema20_counter))
+
+        elif stock_symbol.endswith(".NS"):
+            current_date = datetime.now().date()
+
+            # Calculate the date 40 days ago
+            start_date = current_date - timedelta(days=40)
+
+            # Retrieve the data points for the stock symbol within the past 40 days
+            data_points = FinancialData.objects.filter(
+                symbol=stock_symbol,
+                date__range=[start_date, current_date]
+            ).order_by('date').values_list('symbol', 'date', 'ema20', 'close_price')
+
+            if not data_points or not all(data_point[2] for data_point in data_points):
+                symbols_to_remove.append(stock_symbol)
+                continue
+            
+            if len(data_points) == 1 and data_points[0][2] == data_points[0][3]:
+                symbols_to_remove.append(stock_symbol)
+                continue
+            
+            ema20_counter = calculate_Stocks_ema20(stock_symbol)
+            for symbol, date, ema20, close_price in data_points:
+                date_list.add(date)  # Adding date to the set
+                if ema20_counter > 0:
+                    if close_price < ema20:
+                        ema20_counter = -1
+                    else:
+                        ema20_counter += 1
+                else:
+                    if close_price > ema20:
+                        ema20_counter = 1
+                    else:
+                        ema20_counter -= 1
+                result.append((symbol, date, ema20_counter))
+
+        else:
+            continue  
+      
+    date_list = sorted(date_list)
+    print("asjkfddlkahhhhhhhhhhhhhhhhh:",symbols_from_watchlist)
     current_path = resolve(request.path_info).url_name
-    return render(request, 'watchlist.html', {'watchlist_sector': watchlist_sector, 'watchlist_stock': watchlist_stock, 'current_path': current_path})
+    context = {
+        'result': result[::-1],
+        'date_list': date_list[::-1],
+        'current_path': current_path,
+        'symbols_from_watchlist':symbols_from_watchlist,
+    }
+    return render(request, 'watchlist.html', context)
 
 # Email
 
@@ -692,7 +777,7 @@ def stocks(request):
     current_path = resolve(request.path_info).url_name
     # Fetch a list of all sectors
     sectors = Sectors.objects.all()
-
+   
     context = {
         'result': result[::-1],
         'unique_symbols': unique_symbols[::-1],
@@ -738,7 +823,6 @@ def calculate_ema20(stock_symbol):
 @login_required
 def sectors(request):
     unique_symbols = SectorData.objects.values_list('symbol', flat=True).distinct()[:20]
-    
     symbols_to_remove = []
     result = []
     date_list = set()  # Using a set to ensure unique dates

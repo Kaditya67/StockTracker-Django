@@ -19,7 +19,9 @@
                         {% for symbol in unique_symbols %}
                             <tr>
                                 <td><button type="button" class="btn btn-outline-secondary add-to-watchlist" data-symbol="{{ symbol }}">+</button></td>
-                                <td class="sector">{{ symbol }}</td>
+                                {% comment %} <td class="sector">{{ symbol }}</td> {% endcomment %}
+                                <td class="sector"><a href="#" onclick="showGraph('{{ symbol }}');">{{ symbol }}</a></td>
+
                                 {% for item in result %}
                                     {% if item.0 == symbol %}
                                         <td style="background-color: {% if item.2 > 0%}#81e777 {% else %}#fd1c00{% endif %};">
@@ -32,7 +34,21 @@
                     </tbody>
                 </table>
             </div>
-        </div><script>
+        </div>
+        <script>
+            function showGraph(symbol) {
+                var type = 'stock';
+                if (symbol.startsWith('^')) {
+                    type = 'sector';
+                }
+                localStorage.setItem("selectedDropdownValue1", type);
+                localStorage.setItem("selectedDropdownValue2", symbol);
+                localStorage.setItem("selectedDropdownValue3", '20');
+      
+                var url = '/graph/' + type + '/' + encodeURIComponent(symbol) + '/20/'; 
+                window.location.href = url;
+            }
+            
             jQuery(document).ready(function($) {
                 $('.add-to-watchlist').click(function() {
                     var symbol = $(this).data('symbol');

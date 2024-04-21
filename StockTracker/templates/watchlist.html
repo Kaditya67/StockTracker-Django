@@ -8,34 +8,59 @@
                 <thead class="thead-dark">
                     <tr>
                         <th style="text-align:center;">Remove</th>
-                        <th style="text-align:center">Date</th>
-                        <th style="text-align:center">Symbol</th>
-                        <th style="text-align:center">Closing price</th>
+                        <th style="text-align:center;">Symbol</th>
+                        {% for date in date_list %}
+                            <th style="text-align:center;">{{ date }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% if watchlist_sector %}
-                        {% for record in watchlist_sector %}
+                    {% if result %}
+                        {% for symbol in symbols_from_watchlist %}
                             <tr>
-                                <td class="text-center" style="vertical-align: middle;"><button type="button" class="btn btn-outline-secondary remove-from-watchlist" onclick="removeFromWatchlist('{{ record.symbol }}')">-</button></td>
-                                <td>{{ record.date }}</td>
-                                <td>{{ record.symbol }}</td>
-                                <td>{{ record.closing_price }}</td>
+                                <td style="text-align:center;">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeFromWatchlist('{{ symbol }}')">-</button>
+                                </td>
+                                <td style="text-align:center;">
+                                    <a href="#" onclick="showGraph('{{ symbol }}')">{{ symbol }}</a>
+                                </td>
+                                {% for result_item in result %}
+                                    {% if result_item.0 == symbol %}
+                                        <td style="background-color: {% if result_item.2 > 0 %}#81e777{% else %}#fd1c00{% endif %};">
+                                            {{ result_item.2 }}
+                                        </td>
+                                    
+                                    {% endif %}
+                                
+                                {% endfor %}
                             </tr>
                         {% endfor %}
                     {% else %}
                         <!-- Display a message if watchlist is empty -->
                         <tr>
-                            <td colspan="4" class="text-center">Watchlist is empty</td>
+                            <td colspan="{{ 23}}" style="background-color: #bec0c3; font-weight:bold" class="text-center">Watchlist is empty</td>
                         </tr>
                     {% endif %}
                 </tbody>
             </table>
-        </div>
+            
+                    </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery library -->
     <script>
+        function showGraph(symbol) {
+            var type = 'stock';
+            if (symbol.startsWith('^')) {
+                type = 'sector';
+            }
+            localStorage.setItem("selectedDropdownValue1", type);
+            localStorage.setItem("selectedDropdownValue2", symbol);
+            localStorage.setItem("selectedDropdownValue3", '20');
+  
+            var url = '/graph/' + type + '/' + encodeURIComponent(symbol) + '/20/'; 
+            window.location.href = url;
+        }
         function removeFromWatchlist(symbol) {
             document.getElementById('symbol_to_remove').value = symbol;
             document.getElementById('remove_watchlist_form').submit();

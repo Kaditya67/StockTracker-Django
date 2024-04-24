@@ -130,8 +130,8 @@
             var newUrl = '/graph/' + selectedType + '/' + encodeURIComponent(selectedSymbol) + '/' + selectedEMA + '/';
             if (newUrl.includes('//')) {
                 alert("Failed to load the chart");
-                window.location.href = "/graph/sector/%5ENSEI/20/";
-                newUrl='/graph/sector/%5ENSEI/20/'
+                window.location.href = "/graph/sector/^NSEI/20/";
+                newUrl='/graph/sector/^NSEI/20/'
             }
             
             history.pushState(null, "", newUrl);

@@ -1638,7 +1638,8 @@ def graph_partial(request, type, symbol, ema_value):
             'sectors': sectors,
             
         }
-        
+        return render(request, 'graph_partial.html', context)
+
     except Exception as e:
         # Handle specific exceptions if possible
         return HttpResponse(f"Error: {e}")

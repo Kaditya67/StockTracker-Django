@@ -536,18 +536,59 @@ def symbols_and_ema_counts(request):
     # Pass the data to the template
     return render(request, 'symbols_and_ema_counts.html', {'symbols_and_ema_counts': symbols_and_ema_counts})
 
-def index(request):
-        
-    if request.method == 'POST':
-        name=request.POST.get('name')
-        email=request.POST.get('email')
-        address=request.POST.get('address')
-        contactinfo=ContactInformation(name=name,email=email,address=address)
-        contactinfo.save()
-        messages.success(request,"Contact Form Submitted !")
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 
-    return render(request,'index.html')
+def index(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+        # Validate the data
+        if name and email and message:  # Check if all fields are provided
+            try:
+                # Create a ContactInformation object
+                contact_info = ContactInformation(name=name, email=email, message=message)
+                # Validate the object (this will raise a ValidationError if any field fails validation)
+                contact_info.full_clean()
+                # Save the object if validation passes
+                contact_info.save()
+                messages.success(request, "Contact Form Submitted!")
+            except ValidationError as e:
+                # If validation fails, display error messages
+                error_messages = '; '.join(e.messages)
+                messages.error(request, f"Error: {error_messages}")
+        else:
+            messages.error(request, "Error: All fields are required!")
+
+    return render(request, 'index.html')
+
         
+from .models import ContactInformation
+import re  # Import regular expressions module
+
+def contact(request):
+    # Fetch all ContactInformation objects from the database
+    contact_info = ContactInformation.objects.all()
+
+    # Perform text formatting on name and message fields
+    for contact in contact_info:
+        # Correct capitalization of name (capitalize first letter of each word)
+        contact.name = contact.name.title()
+        
+        # Remove extra spaces from name
+        contact.name = re.sub(r'\s+', ' ', contact.name).strip()
+        
+        # Correct capitalization of message (capitalize first letter of each word)
+        contact.message = contact.message.title()
+        
+        # Remove extra spaces from message
+        contact.message = re.sub(r'\s+', ' ', contact.message).strip()
+
+    # Pass the contact_info queryset to the template for rendering
+    return render(request, 'contact.html', {'contact_info': contact_info})
+
 ## User logout and verify
 
 @login_required

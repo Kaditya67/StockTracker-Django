@@ -219,6 +219,7 @@ JAZZMIN_SETTINGS = {
 
         # external url that opens in a new window (Permissions can be added)
         {"name": "Smart Record", "url": "http://127.0.0.1:8000/admin/admindashboard/", "new_window": False},
+        {"name": "Contact", "url": "http://127.0.0.1:8000/contact/", "new_window": False},
         {"name": "Support", "url": "https://github.com/Kaditya67/StockTracker-Django", "new_window": True},
 
         {"app":"auth", },

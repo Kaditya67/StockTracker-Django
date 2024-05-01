@@ -1,6 +1,9 @@
 # stockapp/admin.py
 from django.contrib import admin
 
+from .models import ContactInformation
+admin.site.register(ContactInformation)
+
 from . models import stock_user
 admin.site.register(stock_user)
 

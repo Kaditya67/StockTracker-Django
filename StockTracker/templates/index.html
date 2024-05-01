@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     {% load static %}
-    <link rel="icon" href="{% static 'images/logo1.png' %}" type="image/png">
-    <title>Stock Track</title>
+    <link rel="icon" href="{% static 'images/TrendSight_logo.png' %}" type="image/png">
+    <title>TrendSight</title>
     <style>
 
       .card-img-top {
@@ -31,7 +31,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container">
-        <a class="navbar-brand" href="{% url 'index' %}">      <img src="{% static 'images/logo1.png' %}" alt="Stock Track Logo">
+        <a class="navbar-brand" href="{% url 'index' %}">      <img src="{% static 'images/TrendSight_logo.png' %}" alt="Stock Track Logo" style="width: 30%; height: auto;">
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -60,8 +60,8 @@
       <div class="container">
           <h1 class="display-4">Track Your Stocks Like a Pro</h1>
           <p class="lead">Stay informed about your investments with real-time data and advanced analytics.</p>
-          <a href="{% url 'subscription' %}" class="btn btn-light btn-lg black-border" style="color: white; background-color: red;"><h6>Subscription</h6></a>
-          <a href="{% url 'signup' %}" class="btn btn-light btn-lg black-border" style="color: white;background-color: #212529; margin-left: 30px "><h6>Free Demo ></h6></a>
+          <a href="{% url 'subscription' %}" class="btn btn-light btn-lg black-border" style="color: white; background-color: #343a3f;"><h6>Subscription</h6></a>
+          <a href="{% url 'signup' %}" class="btn btn-light btn-lg black-border" style="color: white;background-color: #343a3f; margin-left: 30px "><h6>Free Demo ></h6></a>
       </div>
   </header>
 
@@ -108,12 +108,14 @@
   </section>
 
   <!-- Pricing Section -->
-  <section id="pricing" class="bg-light py-5">
+  
+<!--   
+<section id="pricing" class="bg-light py-5">
     <div class="container">
       <h2 class="text-center">Pricing Plans</h2> <br>
-      <div class="row">
+      <div class="row"> -->
         <!-- Pricing Plan Box 1 -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <div class="card mb-4">
             <div class="card-body">
               <h3 class="card-title">Monthly Plan</h3>
@@ -127,10 +129,10 @@
               <a href="#" class="btn btn-primary btn-block">Get Started</a>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Pricing Plan Box 2 -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <div class="card mb-4">
             <div class="card-body">
               <h3 class="card-title">Yearly Plan</h3>
@@ -148,7 +150,7 @@
 
       </div>
     </div>
-  </section>
+  </section> -->
 
 
     <!-- Contact Section -->

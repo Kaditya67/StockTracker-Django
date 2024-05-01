@@ -21,7 +21,9 @@
                             <tr>
                                 <td><button type="button" class="btn btn-outline-secondary add-to-watchlist" data-symbol="{{ symbol }}">+</button></td>
                                 {% comment %} <td class="sector">{{ symbol }}</td> {% endcomment %}
-                                <td class="sector"><a href="#" onclick="showGraph('{{ symbol }}');">{{ symbol }}</a></td>
+                                <td class="sector"><a href="#" onclick="showGraph('{{ symbol }}');">
+                                    {% if symbol == '^NSEI' %}NIFTY50{% else %}{{ symbol|slice:"4:" }}
+                                    {% endif %}</a></td>
 
                                 {% for item in result %}
                                     {% if item.0 == symbol %}

@@ -1712,3 +1712,46 @@ def get_stock_data(request):
 def stock_list(request):
     stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
     return render(request, 'home.html', {'stock_symbols': stock_symbols})
+
+
+
+#  Load data from CSV
+import csv
+from Stocks.models import Sectors, Stocks  # Replace 'myapp' with the name of your Django app
+
+def fill_sectors_from_csv(csv_file):
+    with open(csv_file, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header row
+        
+        for row in reader:
+            name = row[0]
+            symbol = row[1]
+            isincode = row[3]
+            Sectors.objects.create(name=name, symbol=symbol, isincode=isincode)
+
+def fill_stocks_from_csv(csv_file):
+    with open(csv_file, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header row
+        
+        for row in reader:
+            sector_name = row[0]
+            sector = Sectors.objects.get(name=sector_name)
+            
+            name = row[2]
+            symbol = row[4]
+            isincode = row[5]
+            Stocks.objects.create(name=name, symbol=symbol, isincode=isincode, sectors=[sector])
+
+# Usage:
+# csv_file_path_sectors = '/path/to/your/sectors_csv_file.csv'
+# fill_sectors_from_csv(csv_file_path_sectors)
+
+# csv_file_path_stocks = '/path/to/your/stocks_csv_file.csv'
+# fill_stocks_from_csv(csv_file_path_stocks)
+
+# commands:
+
+# python manage.py loaddata sectors.csv
+# python manage.py loaddata stocks.csv

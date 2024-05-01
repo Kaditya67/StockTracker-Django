@@ -56,7 +56,7 @@ class stock_user(AbstractUser):  # Asad code Do not touch!!!!!!
 class ContactInformation(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField()
-    address = models.CharField(max_length=120)
+    message = models.CharField(max_length=120)
 
     def __str__(self):
         return self.name

@@ -536,18 +536,59 @@ def symbols_and_ema_counts(request):
     # Pass the data to the template
     return render(request, 'symbols_and_ema_counts.html', {'symbols_and_ema_counts': symbols_and_ema_counts})
 
-def index(request):
-        
-    if request.method == 'POST':
-        name=request.POST.get('name')
-        email=request.POST.get('email')
-        address=request.POST.get('address')
-        contactinfo=ContactInformation(name=name,email=email,address=address)
-        contactinfo.save()
-        messages.success(request,"Contact Form Submitted !")
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 
-    return render(request,'index.html')
+def index(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+        # Validate the data
+        if name and email and message:  # Check if all fields are provided
+            try:
+                # Create a ContactInformation object
+                contact_info = ContactInformation(name=name, email=email, message=message)
+                # Validate the object (this will raise a ValidationError if any field fails validation)
+                contact_info.full_clean()
+                # Save the object if validation passes
+                contact_info.save()
+                messages.success(request, "Contact Form Submitted!")
+            except ValidationError as e:
+                # If validation fails, display error messages
+                error_messages = '; '.join(e.messages)
+                messages.error(request, f"Error: {error_messages}")
+        else:
+            messages.error(request, "Error: All fields are required!")
+
+    return render(request, 'index.html')
+
         
+from .models import ContactInformation
+import re  # Import regular expressions module
+
+def contact(request):
+    # Fetch all ContactInformation objects from the database
+    contact_info = ContactInformation.objects.all()
+
+    # Perform text formatting on name and message fields
+    for contact in contact_info:
+        # Correct capitalization of name (capitalize first letter of each word)
+        contact.name = contact.name.title()
+        
+        # Remove extra spaces from name
+        contact.name = re.sub(r'\s+', ' ', contact.name).strip()
+        
+        # Correct capitalization of message (capitalize first letter of each word)
+        contact.message = contact.message.title()
+        
+        # Remove extra spaces from message
+        contact.message = re.sub(r'\s+', ' ', contact.message).strip()
+
+    # Pass the contact_info queryset to the template for rendering
+    return render(request, 'contact.html', {'contact_info': contact_info})
+
 ## User logout and verify
 
 @login_required
@@ -1671,3 +1712,46 @@ def get_stock_data(request):
 def stock_list(request):
     stock_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
     return render(request, 'home.html', {'stock_symbols': stock_symbols})
+
+
+
+#  Load data from CSV
+import csv
+from Stocks.models import Sectors, Stocks  # Replace 'myapp' with the name of your Django app
+
+def fill_sectors_from_csv(csv_file):
+    with open(csv_file, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header row
+        
+        for row in reader:
+            name = row[0]
+            symbol = row[1]
+            isincode = row[3]
+            Sectors.objects.create(name=name, symbol=symbol, isincode=isincode)
+
+def fill_stocks_from_csv(csv_file):
+    with open(csv_file, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header row
+        
+        for row in reader:
+            sector_name = row[0]
+            sector = Sectors.objects.get(name=sector_name)
+            
+            name = row[2]
+            symbol = row[4]
+            isincode = row[5]
+            Stocks.objects.create(name=name, symbol=symbol, isincode=isincode, sectors=[sector])
+
+# Usage:
+# csv_file_path_sectors = '/path/to/your/sectors_csv_file.csv'
+# fill_sectors_from_csv(csv_file_path_sectors)
+
+# csv_file_path_stocks = '/path/to/your/stocks_csv_file.csv'
+# fill_stocks_from_csv(csv_file_path_stocks)
+
+# commands:
+
+# python manage.py loaddata sectors.csv
+# python manage.py loaddata stocks.csv

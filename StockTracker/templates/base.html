@@ -27,8 +27,8 @@
     </script>
     <title>{% block title %}My Site{% endblock %}</title>
     {% load static %}
-    <link rel="icon" href="{% static 'images/logo1.png' %}" type="image/png">
-    <link rel="icon" href="" type="image/png">
+    <link rel="icon" href="{% static 'images/TrendSight_logo.png' %}" type="image/png">
+    <!-- <link rel="icon" href="" type="image/png"> -->
     <meta charset="UTF-8" />
     <meta
       name="viewport"
@@ -231,7 +231,7 @@
 
     <div id="sidebar">
       <nav class="navbar navbar-dark">
-        <a class="navbar-brand" href="#">StockTrack</a>
+        <a class="navbar-brand" href="{% url 'dashboard' %}">StockTrack</a>
       </nav>
       <br>
       <!-- Toggle button -->

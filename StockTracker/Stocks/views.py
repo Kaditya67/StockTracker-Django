@@ -42,7 +42,7 @@ def close_position(request):
         if portfolio_entry:
             purchase_price = float(portfolio_entry['purchase_price'])
             purchase_date = datetime.strptime(portfolio_entry['purchase_date'], '%Y-%m-%d').date()
-            days_held = (datetime.strptime(sell_date, '%Y-%m-%d').date() - purchase_date).days
+            days_held = ((datetime.strptime(sell_date, '%Y-%m-%d').date() - purchase_date).days)+1
             return_percentage = int(((sell_price - purchase_price) / purchase_price) * 100)
 
             # Calculate remaining quantity in portfolio after selling

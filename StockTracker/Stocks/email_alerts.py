@@ -56,7 +56,7 @@ def email_alert(subject, body, to, otp, api_key=None, image_paths=None):
 
 def email_password(subject, body, to, api_key=None, image_paths=None):
     # Update the email body to include the verification link
-    body_with_link = f"{body}\n\nClick the following link to verify your email address: http://127.0.0.1:8000/verify_password/"
+    body_with_link = f"{body}"
 
     msg = MIMEMultipart()
     msg['Subject'] = subject

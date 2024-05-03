@@ -259,23 +259,16 @@
           <li
             class="nav-item {% if current_path == 'graph'%}active{% endif %}"
           >
-            <a id='graph'
+            <a
               class="nav-link text-light"
-              href="{% url 'graph' type='sector' symbol='^NSEI' ema_value=20 %}
+              href="{% url 'graph' type='stock' symbol='TATAMOTORS.NS' ema_value=20 %}
               "
             >
             <i class="fa fa-bar-chart"></i>
               <span class="nav-text">Charts</span>
             </a>
           </li>
-          <script>
-            document.getElementById("graph").addEventListener("click", function(event) {
-            localStorage.setItem("selectedDropdownValue1", 'sector');
-            localStorage.setItem("selectedDropdownValue2", '^NSEI');
-            localStorage.setItem("selectedDropdownValue3", '20');
-          });
 
-          </script> 
           <!-- Sectors -->
           <li
             class="nav-item {% if current_path == 'sectors' %}active{% endif %}"
@@ -295,6 +288,28 @@
               <span class="nav-text">Stocks</span>
             </a>
           </li>
+
+          <!-- Stocks -->
+
+          <li
+            class="nav-item {% if current_path == 'main_alerts' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'main_alerts' %}">
+              <i class="fa-regular fa-lightbulb"></i>
+              <span class="nav-text">Alerts</span>
+            </a>
+          </li>
+
+
+          {% comment %} <li
+            class="nav-item {% if current_path == 'main_alerts' %}active{% endif %}"
+          >
+            <a class="nav-link text-light" href="{% url 'main_alerts' %}">
+              <i class="fa-regular fa-lightbulb"></i>
+              <span class="nav-text">Alert</span>
+            </a>
+          </li> {% endcomment %}
+
           <!-- Portfolio -->
           <li
             class="nav-item {% if current_path == 'portfolio' %}active{% endif %}"

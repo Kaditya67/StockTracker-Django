@@ -160,3 +160,26 @@ class EmaCountsSector(models.Model):
     def __str__(self):
         return f"{self.stock_data.symbol} - {self.stock_data.date}"
 
+
+class Alert(models.Model):
+    date = models.DateField()
+    symbol = models.CharField(max_length=50)
+    closing_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Add any additional fields or methods as needed
+
+    def __str__(self):
+        return f"{self.symbol} - {self.date}"
+
+class Main(models.Model):
+    create_alert = models.CharField(max_length=10)  # Adjust max_length as needed
+    trend = models.CharField(max_length=10)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    expirationDate = models.DateField()
+    name = models.CharField(max_length=100)
+    message = models.TextField()
+
+
+    def __str__(self):
+        return self.name
+

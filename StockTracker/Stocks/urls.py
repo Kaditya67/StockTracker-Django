@@ -24,8 +24,10 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('help/', views.help, name='help'),
     path('about/', views.about, name='about'),
+    path('main_alerts/', views.main_alerts, name='main_alerts'),
+    path('log/', views.log, name='log'),
 
-# Fetch Stock and sector data urls
+    # Fetch Stock and sector data urls
     path('fetch_and_calculate_ema/', views.fetch_and_calculate_ema, name='fetch_and_store_stock_data'),
     path('fetch_and_calculate_ema_sector/', views.fetch_and_calculate_ema_sector, name='fetch_and_calculate_ema_sector'),
     path('analyze_stocks/', views.analyze_closing_vs_ema, name='analyze_closing_vs_ema'),

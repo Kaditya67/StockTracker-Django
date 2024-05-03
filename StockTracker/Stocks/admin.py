@@ -25,6 +25,12 @@ admin.site.register(EmaCounts)
 from .models import EmaCountsSector
 admin.site.register(EmaCountsSector)
 
+from .models import Alert
+admin.site.register(Alert)
+
+from .models import Main
+admin.site.register(Main)
+
 
 
 # User SignUp

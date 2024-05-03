@@ -3,7 +3,7 @@ from .forms import SignUpForm
 from django.shortcuts import render, redirect,HttpResponse
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from .models import ContactInformation
+from .models import ContactInformation, Main
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import SectorData, EmaCountsSector
@@ -402,7 +402,7 @@ def watchlist(request):
             continue  
       
     date_list = sorted(date_list)
-    print("asjkfddlkahhhhhhhhhhhhhhhhh:",symbols_from_watchlist)
+    print("",symbols_from_watchlist)
     current_path = resolve(request.path_info).url_name
     context = {
         'result': result[::-1],
@@ -411,6 +411,81 @@ def watchlist(request):
         'symbols_from_watchlist':symbols_from_watchlist,
     }
     return render(request, 'watchlist.html', context)
+from .models import Alert
+def main_alerts(request):
+    try:
+        watchlist_sector = json.loads(request.user.watchlist_sector)
+    except (json.JSONDecodeError, AttributeError):
+        watchlist_sector = []
+
+    try:
+        watchlist_stock = json.loads(request.user.watchlist_stock)
+    except (json.JSONDecodeError, AttributeError):
+        watchlist_stock = []
+
+    # Fetch symbols and unique symbols
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+
+    # Loop through watchlist_sector
+    for record in watchlist_sector:
+        if record['symbol'] in unique_symbols:
+            # Symbol exists in FinancialData
+            alerts_data = FinancialData.objects.filter(symbol=record['symbol'], ).values('date', 'symbol',
+                                                                                         'close_price')
+
+        else:
+            # Symbol does not exist in FinancialData, fetch from SectorData
+            alerts_data = SectorData.objects.filter(symbol=record['symbol'], ).values('date', 'symbol', 'close_price')
+
+        # Append alerts to record
+        record['alerts'] = [{'date': alert['date'], 'symbol': alert['symbol'], 'closing_price': alert['close_price']}
+                            for alert in alerts_data]
+
+        for alert_data in alerts_data:
+            alert = Alert.objects.create(date=alert_data['date'], symbol=alert_data['symbol'],
+                                         closing_price=alert_data['close_price'])
+
+            alert = {
+                'date': alert_data['date'],
+                'symbol': alert_data['symbol'],
+                'closing_price': alert_data['close_price']
+            }
+            record['alerts'].append(alert)
+    current_path = resolve(request.path_info).url_name
+
+    context = {
+        'watchlist_sector': watchlist_sector,
+        'watchlist_stock': watchlist_stock,
+        'unique_symbols': unique_symbols,
+        'symbols': symbols,
+        'current_path': current_path,
+    }
+
+    return render(request, 'main_alerts.html', context)
+def log(request):
+    if request.method == 'POST':
+        # Extract data from the form submission
+        create_alert = request.POST.get('create_alert')
+        trend = request.POST.get('trend')
+        price = request.POST.get('price')
+        expirationDate = request.POST.get('expirationDate')
+        name = request.POST.get('name')
+        message = request.POST.get('message')
+
+        # Create a new Alert object and save it to the database
+        alert = Main.objects.create(create_alert=create_alert, trend=trend, price=price,
+                                    expirationDate=expirationDate, name=name, message=message)
+
+    unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()
+    symbols = SectorData.objects.values_list('symbol', flat=True).distinct()
+
+    context = {
+        'unique_symbols': unique_symbols,
+        'symbols': symbols,
+
+    }
+    return render(request, 'log.html',context)
 
 # Email
 
@@ -451,7 +526,7 @@ def verify_password(request):
         confirm_password = request.POST.get('confirm_password')
 
         # Check if the email and username match with database records
-        user = User.objects.filter(email=email, username=username).first()
+        user = stock_user.objects.filter(email=email, username=username).first()
         if user:
             # Email and username match, proceed with password change
             if new_password == confirm_password:
@@ -641,7 +716,7 @@ def user_login(request):
         else:
             print(f"Failed login attempt for user: {username}")
             messages.error(request, "Invalid credentials! Please try again")
-            return render(request, " .html")
+            return render(request, "user_login.html")
 
     return render(request, "user_login.html")
 
@@ -676,7 +751,9 @@ def signup(request):
 
             request.session['otp_sent_to_email'] = otp
 
-            email_alert("welcome to our website","thank you for signing up!",email,otp)
+            email_alert("welcome to our website","Thank you for signing up! "
+                                                 "Please ensure that you enter this OTP on the verification page within the next 5 minutes. After this period, the OTP will expire, and you will need to request a new oneFor security reasons, please do not share this OTP with anyone.  contact our support team at 'trendsight@gmail.com'."
+                                                 "Best regards, trendsight!",email,otp)
             
             # Redirect the user to the appropriate page after sign up
             return redirect('verify')  # Replace 'verify' with the name of your verification page

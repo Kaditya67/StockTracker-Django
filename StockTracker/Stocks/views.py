@@ -42,7 +42,7 @@ def close_position(request):
         if portfolio_entry:
             purchase_price = float(portfolio_entry['purchase_price'])
             purchase_date = datetime.strptime(portfolio_entry['purchase_date'], '%Y-%m-%d').date()
-            days_held = (datetime.strptime(sell_date, '%Y-%m-%d').date() - purchase_date).days
+            days_held = ((datetime.strptime(sell_date, '%Y-%m-%d').date() - purchase_date).days)+1
             return_percentage = int(((sell_price - purchase_price) / purchase_price) * 100)
 
             # Calculate remaining quantity in portfolio after selling
@@ -1792,43 +1792,66 @@ def stock_list(request):
 
 
 
-#  Load data from CSV
 import csv
-from Stocks.models import Sectors, Stocks  # Replace 'myapp' with the name of your Django app
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Sectors, Stocks
 
-def fill_sectors_from_csv(csv_file):
-    with open(csv_file, 'r') as file:
-        reader = csv.reader(file)
-        next(reader)  # Skip header row
-        
-        for row in reader:
-            name = row[0]
-            symbol = row[1]
-            isincode = row[3]
-            Sectors.objects.create(name=name, symbol=symbol, isincode=isincode)
+def import_data(request):
+    """
+    View function to handle CSV data import.
+    """
+    if request.method == 'POST':
+        csv_file = request.FILES.get('data_file')
+        if not csv_file:
+            return HttpResponse("No CSV file uploaded.")
 
-def fill_stocks_from_csv(csv_file):
-    with open(csv_file, 'r') as file:
-        reader = csv.reader(file)
-        next(reader)  # Skip header row
-        
-        for row in reader:
-            sector_name = row[0]
-            sector = Sectors.objects.get(name=sector_name)
-            
-            name = row[2]
-            symbol = row[4]
-            isincode = row[5]
-            Stocks.objects.create(name=name, symbol=symbol, isincode=isincode, sectors=[sector])
+        try:
+            # Process CSV data directly from the uploaded file
+            csv_data = csv.reader(csv_file.read().decode('utf-8').splitlines())  # Decode bytes to string
+            for row in csv_data:
+                name, symbol, sector_id, isincode = row
+                # Create a new Sectors object with all column values
+                Sectors.objects.create(name=name, symbol=symbol, sector_id=sector_id, isincode=isincode)
+            return HttpResponse("Data imported successfully!")
+        except Exception as e:
+            return HttpResponse(f"Error importing data: {e}")
+    else:
+        return render(request, 'data_import_form.html')  # Render an upload form template
 
-# Usage:
-# csv_file_path_sectors = '/path/to/your/sectors_csv_file.csv'
-# fill_sectors_from_csv(csv_file_path_sectors)
+import csv
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Sectors, Stocks
 
-# csv_file_path_stocks = '/path/to/your/stocks_csv_file.csv'
-# fill_stocks_from_csv(csv_file_path_stocks)
+def import_stocks(request):
+    """
+    View function to handle CSV data import for Stocks.
+    """
+    if request.method == 'POST':
+        csv_file = request.FILES.get('data_file')
+        if not csv_file:
+            return HttpResponse("No CSV file uploaded.")
 
-# commands:
+        try:
+            # Process CSV data directly from the uploaded file
+            csv_data = csv.reader(csv_file.read().decode('utf-8').splitlines())  # Decode bytes to string
+            next(csv_data)  # Skip header row
 
-# python manage.py loaddata sectors.csv
-# python manage.py loaddata stocks.csv
+            for row in csv_data:
+                name, sectors, symbol, isincode, id_value = row
+                # Create a new Stocks object with all column values
+                stock, created = Stocks.objects.get_or_create(name=name, symbol=symbol, isincode=isincode, id=id_value)
+                
+                # Extract sector names and create or retrieve corresponding Sectors objects
+                sectors_list = [Sectors.objects.get_or_create(name=sector_name)[0] for sector_name in sectors.split(';')]
+                
+                # Clear existing sectors and add the new ones
+                stock.sectors.clear()
+                stock.sectors.add(*sectors_list)
+                
+            return HttpResponse("Data imported successfully!")
+        except Exception as e:
+            return HttpResponse(f"Error importing data: {e}")
+    else:
+        return render(request, 'stocks_import_form.html')  # Render an upload form template

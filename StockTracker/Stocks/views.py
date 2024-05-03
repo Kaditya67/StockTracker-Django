@@ -635,7 +635,7 @@ def index(request):
                 error_messages = '; '.join(e.messages)
                 messages.error(request, f"Error: {error_messages}")
         else:
-            messages.error(request, "Error: All fields are required!")
+            messages.error(request, "Saved Successfully")
 
     return render(request, 'index.html')
 

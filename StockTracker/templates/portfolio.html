@@ -45,7 +45,7 @@
                     <th>No of Days</th>
                     <th>Up/Down Trend</th>
                     <th>Position</th>
-                    <th> Alerts </th>
+                    {% comment %} <th> Alerts </th> {% endcomment %}
                     <th> </th>
                 </tr>
             </thead>
@@ -75,7 +75,6 @@
                           <td>{{ entry.trend }}</td>
                           <td>{{ entry.position }}</td>
                           
-                          <td>--</td>
                           <td>
                               <button type="button" class="badge badge-danger" data-toggle="modal" data-target="#closePositionModal">Exit</button>
                           </td>

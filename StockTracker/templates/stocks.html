@@ -2,15 +2,15 @@
 {% block title %} Stocks {% endblock %}
 
 {% block content %}
-    <h1 class="text-center">Stocks Analysis</h1>
+    <h1 class="text-center">Stocks Analysis (EMA20)</h1>
     
     <!-- Dropdown menu for filtering by sector -->
     <div class="container mt-3">
         <form method="GET" action="{% url 'stocks' %}">
             <div class="form-group">
-                <label for="sector">Filter by Sector:</label>
+                <label for="sector">Filter by Stocks:</label>
                 <select class="form-control" id="sector" name="sector">
-                    <option value="">All Sectors</option>
+                    <option value="">All Stocks</option>
                     {% for sector in sectors %}
                         <option value="{{ sector.name }}" {% if selected_sector == sector.name %} selected {% endif %}>{{ sector.name }}</option>
                     {% endfor %}

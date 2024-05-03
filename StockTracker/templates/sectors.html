@@ -91,7 +91,7 @@
     }
     .form-select{
     font-size: 20px; /* Adjust the font size as needed */
-      padding: 13px 131px; /* Adjust the padding as needed */
+      padding: 13px 156px; /* Adjust the padding as needed */
     }
 
     .form-select1{
@@ -171,7 +171,7 @@
                         <input type="number" id="integerInput" name="price" min="0" step="1" placeholder="21782.50">
                         <br>
                         <hr>
-                        <h6>Trigger</h6>
+                        {% comment %} <h6>Trigger</h6> {% endcomment %}
                         <br>
                         <br>
                         <div id="displayText"></div>
@@ -187,7 +187,7 @@
                             <input type="text" class="form-control" id="exampleFormControlInput1" name="name" placeholder="eg: Nifty Alert">
                         </div>
                         <div class="message-container">
-                            <label for="exampleFormControlTextarea1" class="form-label"><h6>Message</h6></label>
+                            {% comment %} <label for="exampleFormControlTextarea1" class="form-label"><h6>Message</h6></label> {% endcomment %}
                             <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" placeholder="message" name="message"></textarea>
                         </div>
                     </div>
@@ -292,7 +292,7 @@
                     <tbody>
                         {% for symbol in unique_symbols %}
                             <tr>
-                                <td><button type="button" class="btn btn-primary-right" data-toggle="modal" data-target="#exampleModal">Alert</button></td>
+                                <td><button type="button" class="btn btn-primary-right" data-toggle="modal" data-target="#exampleModal" style="border:2px solid red; ">+</button></td>
                                 <td><button type="button" class="btn btn-outline-secondary add-to-watchlist" data-symbol="{{ symbol }}">+</button></td>
                                 {% comment %} <td class="sector">{{ symbol }}</td> {% endcomment %}
                                 <td class="sector"><a href="#" onclick="showGraph('{{ symbol }}');">

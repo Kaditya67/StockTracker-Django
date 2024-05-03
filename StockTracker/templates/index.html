@@ -214,15 +214,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     {% comment %} Smooth scrolling Javascript text {% endcomment %}
     <script>
-      $(document).ready(function() {
+      {% comment %} $(document).ready(function() {
         // Toggle collapsible panel visibility
         $('.collapse-button').on('click', function() {
             const target = $(this).data('target');
             $(target).collapse('toggle');
         });
-    });
+    }); {% endcomment %}
   
-      $(document).ready(function() {
+      {% comment %} $(document).ready(function() {
         // Smooth scrolling for navigation links
         $('a.nav-link').on('click', function(event) {
             if (this.hash !== '') {
@@ -235,7 +235,7 @@
                 });
             }
         });
-      });    
+      });     {% endcomment %}
     </script>
 
   </body>

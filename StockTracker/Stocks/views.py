@@ -843,7 +843,7 @@ from django.db.models import Q
 def stocks(request):
     selected_sector = request.GET.get('sector', '')  # Get the selected sector from GET request
     unique_symbols = FinancialData.objects.values_list('symbol', flat=True).distinct()[:20]
-
+    print(unique_symbols)
     symbols_to_remove = []
     result = []
     date_list = set()  # Using a set to ensure unique dates
@@ -854,7 +854,8 @@ def stocks(request):
 
     for stock_symbol in unique_symbols:
         # Get the current date
-        current_date = datetime.now().date()
+        print(FinancialData.objects.filter(symbol=stock_symbol).last().date)
+        current_date = FinancialData.objects.filter(symbol=stock_symbol).last().date
 
         # Calculate the date 40 days ago
         start_date = current_date - timedelta(days=40)
@@ -890,6 +891,7 @@ def stocks(request):
 
     # Convert set to sorted list to maintain order
     date_list = sorted(date_list)
+    print(f" Symbols to remove: ",symbols_to_remove)
     
     unique_symbols = [symbol for symbol in unique_symbols if symbol not in symbols_to_remove]
     current_path = resolve(request.path_info).url_name
@@ -904,6 +906,7 @@ def stocks(request):
         'sectors': sectors,  # Pass the sectors to the template
         'selected_sector': selected_sector,  # Pass the selected sector to the template
     }
+    print(context)
     return render(request, 'stocks.html', context)
 
 def calculate_ema20(stock_symbol):
@@ -946,7 +949,7 @@ def sectors(request):
     date_list = set()  # Using a set to ensure unique dates
     for stock_symbol in unique_symbols:
         # Get the current date
-        current_date = timezone.now().date()
+        current_date = SectorData.objects.filter(symbol=stock_symbol).last().date
 
         # Calculate the date 40 days ago
         start_date = current_date - timedelta(days=40)

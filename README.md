@@ -1,86 +1,119 @@
-# StockTracker App
+# StockTracker
 
-StockTracker is a Django-based web application for tracking stock prices and managing your investment portfolio. This README provides essential information to get you started with the application.
-
-## Table of Contents
-
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation
-](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
+StockTracker is a Django web application for tracking stock prices and managing an investment portfolio. This README explains how to install, run, and contribute to the project.
 
 ## Features
 
-- Real-time stock price tracking of everyday
-- User-friendly interface for portfolio management
-- Historical price data analysis
+- Real-time stock price tracking
+- Portfolio management (holdings, transactions)
+- Historical price charts and analysis
 - Alerts and notifications for price changes
 - Personalized watchlists
+- Simple, responsive UI
 
-## Getting Started
+## Table of Contents
 
-### Prerequisites
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Database](#database)
+- [Run](#run)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Languages](#languages)
 
-Before you begin, ensure you have the following installed on your machine:
+## Prerequisites
 
-- [Python](https://www.python.org/) - Python programming language
-- [Django](https://www.djangoproject.com/) - Python web framework
+- Python 3.8+
+- pip
+- (Optional) virtualenv or venv
+- Git
 
-### Installation
+## Installation
 
 1. Clone the repository:
 
-  ```bash
-   git clone https://github.com/your-username/stocktracker.git
-  ```
+```bash
+git clone https://github.com/Kaditya67/StockTracker-Django.git
+cd StockTracker-Django
+```
 
-2 . Navigate to the project directory
+2. Create and activate a virtual environment:
 
-  ```bash
-    cd StockTracker
-  ```
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+```
 
-3. Install requirements
+3. Install dependencies:
 
+```bash
+pip install -r requirements.txt
+```
 
-  ```bash
-     pip install -r requirements.txt
-  ```
+## Configuration
 
-5. Apply migrations
+1. Copy example environment file (if provided) or create a `.env` file at the project root:
 
-  ```bash
-    python manage.py migrate
-  ```
+```text
+DJANGO_SECRET_KEY=your-secret-key
+DEBUG=True
+DATABASE_URL=sqlite:///db.sqlite3
+# Add API keys for stock data providers if required, e.g.:
+# STOCK_API_KEY=your_api_key
+```
 
-7. Start the development server
-  
-  ```bash
-    python manage.py runserver
-  ```
+2. Ensure `DEBUG=False` in production and set appropriate allowed hosts.
+
+## Database
+
+Apply migrations and create a superuser:
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+(Optional) Load initial fixtures or sample data if available.
+
+## Run
+
+Start the development server:
+
+```bash
+python manage.py runserver
+```
+
+Open your browser at http://localhost:8000
 
 ## Usage
-1. Open your web browser and navigate to http://localhost:8000.
-2. Explore the application and start tracking your stocks!
+
+- Register or log in to manage your portfolio and watchlists.
+- Add tickers to your watchlist to receive updates.
+- View historical charts and export portfolio summaries as needed.
 
 ## Contributing
-Contributions are welcome! If you would like to contribute to the project, please follow these steps:
+
+Contributions are welcome. Suggested workflow:
 
 1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Make your changes and commit them.
-4. Push to your fork and submit a pull request.
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m "Add feature"`
+4. Push: `git push origin feature/your-feature`
+5. Open a pull request.
+
+Please include tests and keep commits focused and documented.
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
 
+This project is licensed under the MIT License. See the LICENSE file for details.
 
----
-[![Your GitHub Stats](https://github-readme-stats.vercel.app/api?username=Kaditya67&show_icons=true&count_private=true&include_all_commits=true&theme=prussian)](https://github.com/Kaditya67/StockTracker-Django/)
+## Languages
 
+Python, JavaScript, HTML, CSS (and optional C/Cython components if used)
 
-
+For bugs or feature requests, open an issue on GitHub.
